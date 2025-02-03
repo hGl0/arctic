@@ -1,6 +1,8 @@
 # necessary libraries
 # could be improved?
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 
 ##### Constants #####
@@ -40,3 +42,8 @@ def plot_dendrogram(model, **kwargs):
 
     # Plot the corresponding dendrogram
     dendrogram(linkage_matrix, **kwargs)
+
+
+def plot_correlation(df, cmap='coolwarm'):
+    correlation_matrix = df.corr(numeric_only=True)
+    return correlation_matrix.style.background_gradient(cmap=cmap, vmin=-1, vmax=1.0)
