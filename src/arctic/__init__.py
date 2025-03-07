@@ -1,8 +1,9 @@
 # necessary libraries
 # could be improved?
+import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from plot import *
+from src.arctic.plot import *
 
 # CONSTANTS
 # 0°C in K
@@ -13,7 +14,7 @@ R = 287.052874
 
 # specific gas constant used by U.S. Standard Atmosphere (J/(K*mol)
 # not recommended to use due to inconsistency w.r.t. Avogadro constant and Boltzmann constant
-R_ussa = 8.31432
+R_USSA = 8.31432
 
 # acceleration due to gravity (m/s^2)
 g = 9.80665
@@ -29,8 +30,14 @@ P0 = 1013.25
 def compute_pca(df, comp=4, **kwargs):
     plot_type = kwargs.get('plot_type', '2D')
     scaler = kwargs.get('scaler', StandardScaler)
+    n_arrows = kwargs.get('n_arrows', 3)
     savefig = kwargs.get('savefig', None)
     savecsv = kwargs.get('savecsv', None)
+
+    if 'label' in df.columns:
+        data = df.drop('label', axis=1)
+    else:
+        data = df
 
     # Scale data with StandardScaler x = (z-u)/s with u being the mean and s the standard deviation
     if scaler:
@@ -38,8 +45,9 @@ def compute_pca(df, comp=4, **kwargs):
             # Check if scaler is a class, not an instance
             if isinstance(scaler, type):
                 scaler = scaler()
-            scaler.fit(df)
-            X = scaler.transform(df)
+
+            scaler.fit(data)
+            X = scaler.transform(data)
         except TypeError as e:
             print(f'Type Error: {e}. \n Ensure your dataframe has only numeric types.')
             return None
@@ -54,13 +62,21 @@ def compute_pca(df, comp=4, **kwargs):
         return None
 
     if plot_type:
-        plot_pca(pca, x_new, df, savefig=savefig, plot_type=plot_type)
+        plot.plot_pca(pca, x_new, df,
+                      savefig=savefig,
+                      plot_type=plot_type,
+                      n_arrows=n_arrows)
 
     # generate overview of influencial features on pca
     scores = pd.DataFrame(pca.components_[:comp].T,
                           columns=[f'PC{i}' for i in range(comp)],
-                          index=df.columns)
-    # store in csv
+                          index=data.columns)
+    expl_var_row = pd.DataFrame([pca.explained_variance_[:comp], pca.explained_variance_ratio_[:comp]],
+                                columns=[f"PC{i}" for i in range(comp)],
+                                index=['Expl_var', 'Expl_var_ratio'])
+    scores = pd.concat([scores, expl_var_row])
+
+    #  store in csv
     if savecsv:
         scores.to_csv(savecsv)
     return scores

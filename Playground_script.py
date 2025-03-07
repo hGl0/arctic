@@ -51,7 +51,14 @@ def process_data(input_file, output_path, model, other):
     print(f"Processed data saved to {output_path}")
 
 
-def main():
+def main(input_file, output, model, other):
+    try:
+        process_data(input_file, output, model, other)
+    except Exception as e:
+        print(f"Error {e} while executing the script")
+
+
+if __name__ == "__main__":
     """Parse arguments and call processing function."""
     parser = argparse.ArgumentParser(description="Process a CSV file using arctic.")
     parser.add_argument("input", type=str, help="Path to input CSV file")
@@ -62,7 +69,6 @@ def main():
     parser.add_argument('other', type=str, choices=['verbose'],
                         nargs='?', default=None, help='Additional parameters')
 
-
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
@@ -70,8 +76,5 @@ def main():
     output_path = os.path.abspath(args.output_path)
 
     # Call processing function
-    process_data(input_file, output_path, args.model, args.other)
+    main(input_file, output_path, args.model, args.other)
 
-
-if __name__ == "__main__":
-    main()

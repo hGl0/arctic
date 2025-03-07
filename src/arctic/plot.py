@@ -2,8 +2,9 @@
 # could be improved?
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import pandas as pd
-from . import compute_pca
+#from . import compute_pca
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler
 
@@ -95,13 +96,15 @@ def plot_correlation(df, **kwargs):
 
 # plot the components of a pca as vectors vs. the data set
 # with x and y being the 2 most important features
-def plot_pca(pca, x_new, df, savefig=None, **kwargs):
+def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
     plot_type = kwargs.get('plot_type', '2D')
+    n_arrows = kwargs.get('n_arrows', 4)
 
     # Init values for plotting
     try:
-        score = x_new[:, :]
-        coeff = np.transpose(pca.components_[:, :])
+        score = x_reduced[:, :]
+        coeff = pca.components_.T
+        pvars = pca.explained_variance_ratio_ * 100
 
         xs = score[:, 0]
         ys = score[:, 1]
@@ -119,39 +122,64 @@ def plot_pca(pca, x_new, df, savefig=None, **kwargs):
             c = df['label'].to_list()
         else:
             c = None
+
     except Exception as e:
         print(f"Error while assigning values: {e}")
         return None
+
 
     # Plot data and principal components
     # decision again match-case statement, might not work in older python versions (< 3.10)
     try:
         if plot_type == '2D':
+            # generate arrows and scale them
+            # 1. approach: find n_arrows longest arrows
+            tops = (coeff ** 2).sum(axis=1).argsort()[-n_arrows:]
+            # print("Tops: ", tops.shape)
+            arrows = coeff[tops, :2]
+            # print("arrows:", arrows.shape)
+
+            # 2. approach find n_arrows features that drive most variance in the visible pcs
+            # tops = (loadings*pvars).sum(axis=1).argsort()[-n_arrows:]
+            # arrows = loadings[tops]
+
+            # Scale arrows
+            arrows /= np.sqrt((arrows ** 2)).sum(axis=0)
+            arrows *= np.abs(score[:, :2]).max(axis=0)
+            scaled_arrows = arrows * np.array([scalex, scaley])
+
             if c:
-                plt.scatter(xs * scalex, ys * scaley, c=c, cmap='tab10')  #maybe useful with cluster labels?
+                unique_labels = np.unique(c)
+                cmap = ListedColormap(plt.get_cmap('tab10').colors[:len(unique_labels)])
+
+                # create mask
+                for i, label in enumerate(unique_labels):
+                    mask = np.array(c) == label
+                    plt.scatter(xs[mask] * scalex, ys[mask] * scaley, color=cmap(i), label=label, alpha=0.5)
+                plt.legend(title='Cluster')
+
             else:
                 plt.scatter(xs * scalex, ys * scaley)
-            # Plot arrows of features
-            for i in range(n):
-                plt.arrow(0, 0, coeff[i, 0], coeff[i, 1], color='r', alpha=0.5)
-                if labels is None:
-                    plt.text(coeff[i, 0] * 1.15, coeff[i, 1] * 1.15,
-                             "Var" + str(i + 1),
-                             color='g', ha='center', va='center')
-                else:
-                    plt.text(coeff[i, 0] * 1.15, coeff[i, 1] * 1.15,
-                             labels[i],
-                             color='g', ha='center', va='center')
+
+            # new arrows
+            width = -0.005 * np.min([np.subtract(*plt.xlim()), np.subtract(*plt.ylim())])
+            for i, arrow in zip(tops, scaled_arrows):
+                plt.arrow(0, 0, *arrow, color='gray', alpha=0.75,
+                          width=width, ec='none', length_includes_head=True)
+                plt.text(*(arrow * 1.15), df.columns[i], ha='center', va='center')
+
+            for i, axis in enumerate('xy'):
+                getattr(plt, f'{axis}label')(f'PC{i + 1} ({pvars[i]:.2f}%)')
 
             # make up for plot
             plt.xlim(-1, 1)
             plt.ylim(-1, 1)
-            plt.xlabel("PC{}".format(1))
-            plt.ylabel("PC{}".format(2))
             plt.grid()
-            plt.title('2D Plot')
+            plt.title('2D Biplot')
+
             # save figure
-            if savefig: plt.savefig(savefig)
+            if savefig:
+                plt.savefig(savefig)
             plt.show()
 
         elif plot_type == '3D':
@@ -195,7 +223,7 @@ def plot_pca(pca, x_new, df, savefig=None, **kwargs):
 def plot_radar(df, label='label', **kwargs):
     features = kwargs.get('features', None)  # List of features to plot
     n_features = kwargs.get('n_features', 6)  # Use the 6 most important features
-    savefig = kwargs.get('savefig', None)  # location to save figure
+    savefig = kwargs.get('savefig', None)  # location to save figur
     agg_func = kwargs.get('agg_func', 'mean')  # aggregation function used with groupby
     scaler = kwargs.get('scaler', StandardScaler)
 
@@ -209,9 +237,9 @@ def plot_radar(df, label='label', **kwargs):
         n_features = len(features)
     else:
         # magic to get n most important features from pca
-        #features = df.columns[:n_features]
-        features = abs(compute_pca(df, plot_type=None,
-                                      comp=n_features)).idxmax()
+        features = df.columns[:n_features]
+        # features = abs(compute_pca(df, plot_type=None,
+        #                              comp=n_features)).idxmax()
 
     # group and aggregate dataframe
     try:
@@ -254,13 +282,13 @@ def plot_radar(df, label='label', **kwargs):
 
         for i, (angle, orig_val) in enumerate(zip(angles[:-1], val.loc[g, features])):
             if orig_val > 1000:
-                ax.text(angle, values[i]+0.05, f"{orig_val:.2e}",
+                ax.text(angle, values[i] + 0.05, f"{orig_val:.2e}",
                         va='center', ha='center',
                         fontsize=8)
             else:
                 ax.text(angle, values[i] + 0.05, f"{orig_val:.2f}",
-                    ha='center', va='center',
-                    fontsize=8)
+                        ha='center', va='center',
+                        fontsize=8)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels([f"{f}" for f in features])
@@ -273,3 +301,8 @@ def plot_radar(df, label='label', **kwargs):
         plt.savefig(savefig, bbox_inches='tight', dpi=300)
     plt.show()
     return
+
+
+# Violin plot for each cluster to compare their characteristics
+def plot_violin(df, label='label', **kwargs):
+    pass
