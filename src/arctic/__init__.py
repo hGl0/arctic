@@ -30,7 +30,7 @@ P0 = 1013.25
 def compute_pca(df, comp=4, **kwargs):
     plot_type = kwargs.get('plot_type', '2D')
     scaler = kwargs.get('scaler', StandardScaler)
-    n_arrows = kwargs.get('n_arrows', 3)
+    n_arrows = kwargs.get('n_arrows', 4)
     savefig = kwargs.get('savefig', None)
     savecsv = kwargs.get('savecsv', None)
 
