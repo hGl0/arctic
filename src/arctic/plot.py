@@ -1,6 +1,8 @@
 # necessary libraries
 # could be improved?
-import os.path
+
+from .utils import *
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -8,20 +10,6 @@ import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler
 import warnings
-
-
-def check_path(save_path):
-    """Ensures that a given path exists and is valid, i.e. a string. Raises an error otherwise."""
-    if save_path is None:
-        raise ValueError("Expected 'save_path' to be a valid file path, but got None.")
-
-    if not isinstance(save_path, str):
-        raise TypeError(f"Expected 'savefig' to be string (existing file path), but got {type(save_path).__name__}.")
-
-    save_dir = os.path.dirname(save_path)
-    if save_dir and not os.path.exists(save_dir):
-        raise FileNotFoundError(f"Path '{save_path}' does not exist.\n"
-                                f"Please create it before saving, or give a valid path.")
 
 
 def plot_dendrogram(model, **kwargs):
@@ -289,6 +277,7 @@ def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
 
         # save figure
         if savefig:
+            check_path(savefig)
             plt.savefig(savefig, bbox_inches='tight', dpi=300)
         plt.show()
 
@@ -377,6 +366,7 @@ def plot_radar(df, label='label', **kwargs):
     plt.title(f"Radar Chart")
 
     if savefig:
+        check_path(savefig)
         plt.savefig(savefig, bbox_inches='tight', dpi=300)
     plt.show()
     return
