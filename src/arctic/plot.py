@@ -1,11 +1,9 @@
 # necessary libraries
 # could be improved?
-
 from .utils import *
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler
@@ -33,7 +31,6 @@ def plot_dendrogram(model, **kwargs):
     # check availability of attributes
     if not all(hasattr(model, attr) for attr in ['children_', 'distances_', 'labels_']):
         raise AttributeError("Model must have 'children_', 'distances_', and 'labels_' attributes.")
-
 
     # Create linkage matrix and then plot the dendrogram
     # create the counts of samples under each node
@@ -138,9 +135,33 @@ def plot_correlation(df, **kwargs):
         raise Exception(f"An error occurred while generating the correlation matrix: {e}")
 
 
-# plot the components of a pca as vectors vs. the data set
-# with x and y being the 2 most important features
-def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
+def plot_pca(pca, x_reduced,
+             features=None,
+             labels=None,
+             savefig=None,
+             **kwargs):
+    """
+    Plots a 2D or 3D Principal Component Analysis (PCA) biplot, visualizing the dataset
+    and the most important principal component vectors.
+
+    :param pca: A fitted PCA object from sklearn.decomposition.PCA.
+        Must contain `components_` and `explained_variance_ratio_` attributes.
+    :param x_reduced: ndarray of shape (n_samples, n_components). The dataset transformed into principal components.
+    :param features: List of feature names correpsonding to the original dataset.
+        Used to label principal component vectors. Default is None.
+    :param labels: List of cluster labels for coloring data points with its respective cluster. Default is None.
+    :param savefig: (str, optional) File path to save the plot. Default is None.
+    :param kwargs:
+                - plot_type (str, optional): '2D' or '3D' plot. Default is '2D'
+                - n_arrows (int, optional): Number of principal component vectors to display. Default is 4.
+
+    :raises AttributeError: If `pca` is missing required attributes.
+    :raises TypeError: If input types are incorrect.
+    :raises ValueError: If `plot_type` is not '2D' or '3D'.
+    :raises FileNotFoundError: If `savefig` path is invalid.
+
+    :return: None
+    """
     plot_type = kwargs.get('plot_type', '2D')
     n_arrows = kwargs.get('n_arrows', 4)
 
@@ -149,70 +170,49 @@ def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
         score = x_reduced[:, :]
         pvars = pca.explained_variance_ratio_ * 100
 
-        xs = score[:, 0]
-        ys = score[:, 1]
-        zs = score[:, 2]
+        xs, ys, zs = score[:, :3].T
 
-        scalex = 1.0 / (xs.max() - xs.min())
-        scaley = 1.0 / (ys.max() - ys.min())
-        scalez = 1.0 / (zs.max() - zs.min())
+        scales = 1.0 / (score.max(axis=0) - score.min(axis=0))
+        scalex, scaley, scalez = scales[:3]
 
-        features = getattr(df, 'columns', None)
-
-        # color data by label
-        c = df['label'].to_list() if 'label' in df else None
-        cmap = ListedColormap(plt.get_cmap('tab10').colors[:len(np.unique(c))]) if c else None
+        # color by label
+        if isinstance(labels, pd.Series):
+            if labels.nunique() > 10:
+                warnings.warn(f"Currently using 'tab10' to assign colors for each cluster.\n"
+                              f"There are {labels.nunique()} unique labels, so the plot might not be displayed correctly.\n"
+                              f"Working on this issue.")
+            c = labels.to_list()
+        else:
+            c = None
 
     except Exception as e:
-        print(f"Error while assigning values: {e}")
-        return None
+        raise Exception(f"Error while initialising values for plotting: {e}")
 
     # Plot data and principal components
-    # decision again match-case statement, might not work in older python versions (< 3.10)
+    # decision against match-case statement, might not work in older python versions (< 3.10)
     try:
         if plot_type == '2D':
-            coeff = pca.components_[:2].T
-            # generate arrows and scale them
-            # 1. approach: find n_arrows longest arrows
-            tops = (coeff ** 2).sum(axis=1).argsort()[-n_arrows:]
-            arrows = coeff[tops, :2]
-
-            # 2. approach: find n_arrows features that drive most variance in the visible pcs
-            # tops = (loadings*pvars).sum(axis=1).argsort()[-n_arrows:]
-            # arrows = loadings[tops]
-
-            # Scale arrows
-            arrows /= np.sqrt((arrows ** 2)).sum(axis=0)
-            arrows *= np.abs(score[:, :2]).max(axis=0)
-            scaled_arrows = arrows * np.array([scalex, scaley])
+            tops, scaled_arrows = compute_arrows(pca, score, n_arrows, scales, 2)
 
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
-            if c is not None:
-                # create mask
-                for i, label in enumerate(np.unique(c)):
-                    mask = np.array(c) == label
-                    ax.scatter(xs[mask] * scalex, ys[mask] * scaley,
-                               color=cmap(i), label=label, alpha=0.5, zorder=0)
-                ax.legend(title='Cluster')
+            if c:
+                scatter = ax.scatter(xs * scalex, ys * scaley,
+                                     c=c, cmap='tab10', alpha=0.5, zorder=0)
+                legend_handles, legend_labels = scatter.legend_elements(prop="colors")
+                ax.legend(legend_handles, legend_labels, title="Cluster")
 
             else:
                 ax.scatter(xs * scalex, ys * scaley, alpha=0.5, zorder=0)
 
-            # new arrows
             for i, arrow in zip(tops, scaled_arrows):
-                ax.quiver(0, 0, *arrow, color='gray',
+                ax.quiver(0, 0, *arrow,
+                          color='gray',
                           zorder=3,
                           angles='xy', scale_units='xy',
                           scale=1)
-
-                if features is None:
-                    ax.text(*(arrow * 1.15),
-                            'Var' + str(i + 1),
-                            color='g', ha='center', va='center')
-                else:
-                    ax.text(*(arrow * 1.15), features[i], ha='center', va='center')
+                ax.text(*(arrow * 1.15), features[i], ha='center', va='center')
 
             for i, axis in enumerate('xy'):
                 getattr(ax, f'set_{axis}label')(f'PC{i + 1} ({pvars[i]:.2f}%)')
@@ -224,38 +224,19 @@ def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
             plt.title('2D Biplot')
 
         elif plot_type == '3D':
-            coeff = pca.components_[:3].T
-            # generate arrows and scale them
-            # 1. approach: find n_arrows longest arrows
-            tops = (coeff ** 2).sum(axis=1).argsort()[-n_arrows:]
-            arrows = coeff[tops, :3]
-
-            # 2. approach: find n_arrows features that drive most variance in the visible pcs
-            # tops = (loadings*pvars).sum(axis=1).argsort()[-n_arrows:]
-            # arrows = loadings[tops]
-
-            # Scale arrows
-            arrows /= np.sqrt((arrows ** 2)).sum(axis=0)  # float errors!!
-            arrows *= np.abs(score[:, :3]).max(axis=0)  # adjust to score
-            scaled_arrows = arrows * np.array([scalex, scaley, scalez])  # same scale as points
-            len_arrows = np.sqrt(((scaled_arrows) ** 2).sum(axis=1))
+            tops, scaled_arrows = compute_arrows(pca, score, n_arrows, scales, 3)
 
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
 
             for i, arrow in zip(tops, scaled_arrows):
-                ax.quiver(0, 0, 0, *arrow, color='gray',
+                ax.quiver(0, 0, 0, *arrow,
+                          color='gray',
                           zorder=3)
-
-                if features is None:
-                    ax.text(*(arrow * 1.15),
-                            'Var' + str(i + 1),
-                            color='g', ha='center', va='center')
-                else:
-                    ax.text(*(arrow * 1.15), features[i], ha='center', va='center')
+                ax.text(*(arrow * 1.15), features[i], ha='center', va='center')
 
             # plot points
-            if c is not None:
+            if c:
                 scatter = ax.scatter3D(xs * scalex, ys * scaley, zs * scalez,
                                        alpha=0.5, c=c, cmap='tab10', zorder=0)
                 legend_handles, legend_labels = scatter.legend_elements(prop="colors")
@@ -273,7 +254,7 @@ def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
             plt.grid()
             plt.title('3D Biplot')
         else:
-            print(f"Warning: Unknown plot type '{plot_type}'")
+            warnings.warn(f"Warning: Unknown plot type '{plot_type}'")
 
         # save figure
         if savefig:
@@ -282,7 +263,7 @@ def plot_pca(pca, x_reduced, df, savefig=None, **kwargs):
         plt.show()
 
     except Exception as e:
-        print(f"Error while plotting: {e}")
+        raise Exception(f"Error while plotting: {e}")
 
 
 # Plots a radar chart for a given dataframe
@@ -298,16 +279,28 @@ def plot_radar(df, label='label', **kwargs):
     if n_features and features:
         raise ValueError("Provide either 'features' (list of columns) "
                          "or 'n_features' (integer), not both. "
-                         "If none is provide n_features = 6.")
+                         "If neither is provided, n_features defaults to 6.")
 
     # set n_features to the amount of given features by list
     if features:
         n_features = len(features)
+
+    # get n_features most influencial features from pca
     else:
-        # magic to get n most important features from pca
-        features = df.columns[:n_features]
-        # features = abs(compute_pca(df, plot_type=None,
-        #                              comp=n_features)).idxmax()
+        # circular import problem
+        from .computation import compute_pca
+        # repetition of features or labels in feature columns...
+        features = compute_pca(df.drop(label, axis=1), plot_type=None,
+                               comp=n_features).drop(['Expl_var', 'Expl_var_ratio']).idxmax().reset_index()
+
+        # nicer solution?
+        add_features = 1
+        while features[0].nunique() != n_features:
+            features = compute_pca(df.drop(label, axis=1), plot_type=None,
+                                   comp=n_features + add_features).drop(
+                ['Expl_var', 'Expl_var_ratio']).idxmax().reset_index()
+            add_features += 1
+        features = features[0].unique()
 
     # group and aggregate dataframe
     try:

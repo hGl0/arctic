@@ -2,7 +2,9 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from .plot import *
+from .plot import plot_pca
+from .utils import *
+
 
 # compute pca for a given data set
 # extract most important features as dataframe
@@ -16,8 +18,10 @@ def compute_pca(df, comp=4, **kwargs):
     savecsv = kwargs.get('savecsv', None)
 
     if 'label' in df.columns:
+        labels = df['label']
         data = df.drop('label', axis=1)
     else:
+        labels=None
         data = df
 
     # Scale data with StandardScaler x = (z-u)/s with u being the mean and s the standard deviation
@@ -41,12 +45,13 @@ def compute_pca(df, comp=4, **kwargs):
         raise Exception(f"Error while transforming X to PCA: {e}")
 
     if plot_type:
-        plot_pca(pca, x_new, df,
-                      savefig=savefig,
-                      plot_type=plot_type,
-                      n_arrows=n_arrows)
+        plot_pca(pca, x_new,
+                 features=df.columns.tolist(), labels=labels,
+                 savefig=savefig,
+                 plot_type=plot_type,
+                 n_arrows=n_arrows)
 
-    # generate overview of influence of each features on each principle component
+    # generate overview of influence of each features on each principal component
     scores = pd.DataFrame(pca.components_[:comp].T,
                           columns=[f'PC{i}' for i in range(comp)],
                           index=data.columns)
@@ -58,7 +63,7 @@ def compute_pca(df, comp=4, **kwargs):
 
     # store in csv
     if savecsv:
-        arctic.utils.check_path(savecsv)
+        check_path(savecsv)
         scores.to_csv(savecsv)
 
     return scores
