@@ -21,7 +21,7 @@ Arctic is a python package to analyse and cluster climate data. It has a special
 [To Do] How to contribute, whom to contact
 
 ## License <a name="license"></a>
-This project is licensed under the [GPL3.0] (LICENSE).
+This project is licensed under the [GPL3.0](LICENSE).
 
 ## FAQ <a name="faq"></a>
 
