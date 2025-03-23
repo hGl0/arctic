@@ -6,11 +6,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import warnings
 
 
-def plot_dendrogram(model, **kwargs):
+def plot_dendrogram(model,
+                    **kwargs):
     """
     Plots a dendrogram for a given hierarchical clustering model with computed distances between samples.
 
@@ -71,7 +72,8 @@ def plot_dendrogram(model, **kwargs):
         warnings.warn(f"Unexpected error: {e}")
 
 
-def plot_correlation(df, **kwargs):
+def plot_correlation(df,
+                     **kwargs):
     """
     Plots a correlation matrix for a given DataFrame.
     Recommended to use equally perceived colormaps with 0 as white, according to https://matplotlib.org/stable/users/explain/colors/colormaps.html
@@ -276,31 +278,8 @@ def plot_radar(df, label='label', **kwargs):
     agg_func = kwargs.get('agg_func', 'mean')  # aggregation function used with groupby
     scaler = kwargs.get('scaler', StandardScaler)
 
-    if n_features and features:
-        raise ValueError("Provide either 'features' (list of columns) "
-                         "or 'n_features' (integer), not both. "
-                         "If neither is provided, n_features defaults to 6.")
-
     # set n_features to the amount of given features by list
-    if features:
-        n_features = len(features)
-
-    # get n_features most influencial features from pca
-    else:
-        # circular import problem
-        from .computation import compute_pca
-        # repetition of features or labels in feature columns...
-        features = compute_pca(df.drop(label, axis=1), plot_type=None,
-                               comp=n_features).drop(['Expl_var', 'Expl_var_ratio']).idxmax().reset_index()
-
-        # nicer solution?
-        add_features = 1
-        while features[0].nunique() != n_features:
-            features = compute_pca(df.drop(label, axis=1), plot_type=None,
-                                   comp=n_features + add_features).drop(
-                ['Expl_var', 'Expl_var_ratio']).idxmax().reset_index()
-            add_features += 1
-        features = features[0].unique()
+    n_features, features = feature_consistence(n_features, features, df.drop('label', axis=1))
 
     # group and aggregate dataframe
     try:
@@ -367,4 +346,124 @@ def plot_radar(df, label='label', **kwargs):
 
 # Violin plot for each cluster to compare their characteristics
 def plot_violin(df, label='label', **kwargs):
-    pass
+    """Doc string"""
+    features = kwargs.get('features', None)  # List of features to plot
+    n_features = kwargs.get('n_features', 6)  # Use the 6 most important features
+    scaler = kwargs.get('scaler', MinMaxScaler)
+    spacing = kwargs.get('spacing', 0.3)
+    savefig = kwargs.get('savefig', None)  # location to save figure
+
+    n_features, features = feature_consistence(n_features, features, df.drop('label', axis=1))
+
+    # Scale features for nicer look
+    try:
+        if isinstance(scaler, type):
+            scaler = scaler()
+
+            tmp = df.drop(label, axis=1)
+            tmp = pd.DataFrame(scaler.fit_transform(tmp),
+                               columns=tmp.columns, index=tmp.index)
+
+            tmp[label] = df[label]
+            df = tmp
+    except TypeError as e:
+        raise TypeError('Ensure your dataframe has only numeric types.')
+    except Exception as e:
+        raise Exception(f"Error while scaling: {e}")
+
+    n_cluster = df[label].nunique()
+    clusters = np.sort(df[label].unique())
+    base_pos = [(n_cluster+1) * spacing * i + 1 for i in range(n_features)]
+
+    fig, ax = plt.subplots(figsize=(9, 4))
+    ax.set_title('Violin plot')
+
+    for i, l in enumerate(clusters):
+        data = df[df[label] == l][features]
+
+        pos = list(map(lambda x: np.round(x + i * spacing, 2), base_pos))
+        ax.violinplot(data,
+                      positions=pos,
+                      showmeans=True, showextrema=False, widths=spacing)
+        # generate labels with empty scatter, improve?
+        ax.scatter([], [], label=l)
+
+    plt.legend(title='Cluster')
+
+    # set style for the axes
+    offset = np.round(spacing * (n_cluster - 1), 2)
+
+    ticks_pos = [x + offset / 2 for x in base_pos]
+    ax.set_xticks(ticks_pos, labels=features)
+    ax.set_xlim(base_pos[0] - spacing, base_pos[-1] + n_cluster * spacing)
+
+    ax.set_xlabel('Feature')
+    ax.set_ylabel(f'Scaled values ({scaler})')
+    plt.subplots_adjust(bottom=0.15, wspace=0.05)
+    if savefig:
+        check_path(savefig)
+        plt.savefig(savefig, bbox_inches='tight', dpi=300)
+    plt.show()
+    return
+
+
+from src.arctic.constants import *
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import pandas as pd
+
+
+def plot_with_dataframe(df, P=10, T=-50):
+    """
+    WIP - Plots a polar stereographic map using data from a DataFrame and local coastlines.
+
+    :param df: (pd.DataFrame): DataFrame with latitude, longitude, and other relevant columns.
+    :param P: pressure to compute geopotential height
+    :param T: assumed temperature at that height
+    """
+
+    # Generate sample geopotential height data (replace with real computations)
+    lon = np.linspace(0, 360, 361)
+    lat = np.linspace(90, 20, 71)  # From the North Pole to mid-latitudes
+    lon2d, lat2d = np.meshgrid(lon, lat)
+
+    # Note: gph kann sich ändern, als Linien ergänzen?
+    # # compute geopotential height
+    T = T + ZERO_DEG  # convert T to Kelvin
+    z = R * T / g * np.log(P0 / P)
+    gph = np.full_like(lon2d, z)
+
+    # Extract specific columns from the DataFrame
+    lat_points = df['latcent']
+    lon_points = df['loncent']
+
+    # Create a polar stereographic plot
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': ccrs.NorthPolarStereo()})
+
+    # Plot data as filled contours, show changing gph as shades of grey
+    # include color bar if so
+    # contour = ax.contourf(lon2d, lat2d, gph, levels=20, transform=ccrs.PlateCarree(), cmap='Greys')
+
+    # Add contour lines for gph
+    ax.contour(lon2d, lat2d, gph, levels=10, colors='black', linewidths=1, transform=ccrs.PlateCarree())
+
+    # Add local coastlines from Cartopy's features
+    coastlines = cfeature.NaturalEarthFeature('physical', 'coastline', '50m', edgecolor='black', facecolor='none')
+    ax.add_feature(coastlines, linewidth=0.5)
+
+    # Add points from the DataFrame
+    ax.scatter(lon_points, lat_points, color='red', s=10, transform=ccrs.PlateCarree(), label='Data Points')
+
+    # Add gridlines
+    ax.gridlines(draw_labels=False, color='gray', linestyle='--')
+
+    # Set the extent (view) for the polar plot
+    # ax.set_extent([-180, 180, 20, 90], crs=ccrs.PlateCarree())
+
+    # Add a colorbar
+    # cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
+    # cbar.set_label('Geopotential Height (gpm)')
+
+    # Add a legend
+    ax.legend(loc='lower left')
+    fig.autofmt_xdate(rotation=45)
