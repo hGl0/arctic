@@ -1,5 +1,5 @@
 # Key functionalities
-from .computation import compute_pca
+from .computation import *
 from .plot import *
 
 # Constants

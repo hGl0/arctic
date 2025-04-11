@@ -2,41 +2,42 @@
 # and plots graphs and insight into an output directory
 
 import argparse
-import pandas as pd
 import os
 import src.arctic as arctic
+from sklearn.cluster import AgglomerativeClustering
 
 
 # multiple arguments for other possible...!! First version!!
-def process_data(input_file, output_path, model, other):
+def process_data(input_file, output_path, model):
     """Main function to process data."""
     # Read input CSV
     try:
-        with open(input_file, "r", encoding="utf-8") as f:
-            filtered_lines = [line for line in f if line.startswith("D")]
-
-        # Convert filtered lines into DataFrame
-        from io import StringIO
-        df = pd.read_csv(
-            StringIO("".join(filtered_lines)),
-            delimiter=",",
-            low_memory=False
-        )
-
-        # To Do: include other parameters nicely
-        if other:
-            print('Successfully read input data')
-
+        data = arctic.read_data(input_file)
+        print("Successfully read data.")
     except Exception as e:
-        print(f"Error reading CSV file: {e}")
-        return
+        raise Exception(f"Error while reading CSV file: {e}")
 
+    # Correlation
+    try:
+        arctic.plot.plot_correlation(data,
+                                     savecsv=f"{output_path}/corr_results.csv",
+                                     savefig=f"{output_path}/corr_plot.png")
+        print("Successfully plotted correlation matrix.")
+    except Exception as e:
+        raise Exception(f"Error while plotting correlation matrix: {e}")
+
+    # PCA
+    # does not work yet!
+    try:
+        pca = arctic.compute_pca(data.select_dtypes('number'), comp=data.shape[1],
+                                 savecsv=f"{output_path}/pca_results.csv",
+                                 plot_type='2D', savefig=f"{output_path}/pca_2D.png")
+        print("Successfully compute the PCA:")
+    except Exception as e:
+        raise Exception(f"Error while computing PCA: {e}")
 
     # insert work flow later!
     # To Do:
-    # csv with most important features by pca
-    # 2D/3D scatter plot with pca vectores
-    # correlation matrix as csv or png? both?
 
     # spider plot with 6 most important features
     # hierarchical: dendrogram
@@ -46,14 +47,14 @@ def process_data(input_file, output_path, model, other):
 
 
     # Save the processed file
-    processed_df = df
-    processed_df.to_csv(os.path.join(output_path, "processed_data.csv"), index=False)
-    print(f"Processed data saved to {output_path}")
+    # processed_df = df
+    # processed_df.to_csv(os.path.join(output_path, "processed_data.csv"), index=False)
+    # print(f"Processed data saved to {output_path}")
 
 
-def main(input_file, output, model, other):
+def main(input_file, output, model, **kwargs):
     try:
-        process_data(input_file, output, model, other)
+        process_data(input_file, output, model, **kwargs)
     except Exception as e:
         print(f"Error {e} while executing the script")
 
@@ -75,6 +76,10 @@ if __name__ == "__main__":
     input_file = os.path.abspath(args.input)
     output_path = os.path.abspath(args.output_path)
 
+    if args.model == 'hierarchical':
+        model = AgglomerativeClustering(n_clusters=3, linkage='average')
+
     # Call processing function
-    main(input_file, output_path, args.model, args.other)
+    main(input_file, output_path, model)
+
 

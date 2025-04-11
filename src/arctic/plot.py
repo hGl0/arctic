@@ -4,7 +4,6 @@ from .utils import *
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import warnings
@@ -87,7 +86,8 @@ def plot_correlation(df,
     :return: pd.io.formats.style.Styler: Styled correlation matrix for Jupyter display, or None if an error occurs.
     """
 
-    save_path = kwargs.get('savefig', None)
+    savefig = kwargs.get('savefig', None)
+    savecsv = kwargs.get('savecsv', None)
     cmap = kwargs.get('cmap', 'RdBu')
 
     if not isinstance(df, pd.DataFrame):
@@ -108,9 +108,9 @@ def plot_correlation(df,
         except AttributeError as e:
             raise AttributeError(f"Attribute Error {e}: Expected 'df' to be a Pandas DataFrame")
 
-        if save_path:
+        if savefig:
             # validate save_path
-            check_path(save_path)
+            check_path(savefig)
 
             fig, ax = plt.subplots(figsize=(15, 15))
 
@@ -129,8 +129,12 @@ def plot_correlation(df,
 
             ax.set_title("Correlation Matrix", pad=20)
 
-            plt.savefig(save_path, bbox_inches='tight', dpi=300)
+            plt.savefig(savefig, bbox_inches='tight', dpi=300)
             plt.close()
+
+        if savecsv:
+            check_path(savecsv)
+            correlation_matrix.to_csv(savecsv)
 
         return styled_matrix
     except Exception as e:
@@ -268,10 +272,24 @@ def plot_pca(pca, x_reduced,
         raise Exception(f"Error while plotting: {e}")
 
 
-# Plots a radar chart for a given dataframe
-# Either n_features or features must be given
-# standard value is n_features to select the n most important features from pca
 def plot_radar(df, label='label', **kwargs):
+    """
+    Plots a radar chart to visualize feature importance or differences across clusters.
+
+    :param df: (pd.DataFrame) DataFrame containing feature values and cluster labels.
+    :param label: (str) Column name used as the group label. Default is 'label'.
+    :param kwargs: Additional arguments:
+        - `features` (list, optional): List of features to plot. Default is None (selects top features).
+        - `n_features` (int, optional): Number of most important features to include. Default is 6.
+        - `savefig` (str, optional): File path to save the figure. Default is None.
+        - `agg_func` (str or callable, optional): Aggregation function (e.g., 'mean', 'median'). Default is 'mean'.
+        - `scaler` (object, optional): Scaler to normalize data. Default is StandardScaler.
+
+    :raises ValueError: If `n_features` is greater than available features.
+    :raises FileNotFoundError: If `savefig` directory does not exist.
+
+    :return: None
+    """
     features = kwargs.get('features', None)  # List of features to plot
     n_features = kwargs.get('n_features', 6)  # Use the 6 most important features
     savefig = kwargs.get('savefig', None)  # location to save figur
@@ -346,7 +364,23 @@ def plot_radar(df, label='label', **kwargs):
 
 # Violin plot for each cluster to compare their characteristics
 def plot_violin(df, label='label', **kwargs):
-    """Doc string"""
+    """
+    Plots violin plots to compare feature distributions across clusters.
+
+    :param df: (pd.DataFrame) DataFrame containing numerical features and cluster labels.
+    :param label: (str) Column name used as the group label. Default is 'label'.
+    :param kwargs: Additional arguments:
+        - `features` (list, optional): List of features to plot. Default is None.
+        - `n_features` (int, optional): Number of most important features to include. Default is 6.
+        - `scaler` (object, optional): Scaler to normalize data. Default is MinMaxScaler.
+        - `spacing` (float, optional): Spacing between violin plots. Default is 0.3.
+        - `savefig` (str, optional): File path to save the figure. Default is None.
+
+    :raises ValueError: If `n_features` is greater than available features.
+    :raises FileNotFoundError: If `savefig` directory does not exist.
+
+    :return: None
+    """
     features = kwargs.get('features', None)  # List of features to plot
     n_features = kwargs.get('n_features', 6)  # Use the 6 most important features
     scaler = kwargs.get('scaler', MinMaxScaler)
@@ -373,7 +407,7 @@ def plot_violin(df, label='label', **kwargs):
 
     n_cluster = df[label].nunique()
     clusters = np.sort(df[label].unique())
-    base_pos = [(n_cluster+1) * spacing * i + 1 for i in range(n_features)]
+    base_pos = [(n_cluster + 1) * spacing * i + 1 for i in range(n_features)]
 
     fig, ax = plt.subplots(figsize=(9, 4))
     ax.set_title('Violin plot')

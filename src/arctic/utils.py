@@ -115,3 +115,32 @@ def feature_consistence(n_features: Optional[int],
         if len(unique_features) == n_features:
             return n_features, list(unique_features)
         add_features += 1
+
+
+# Skips all lines starting with C
+# Reads only lines starting with D
+def read_data(input_file, enc="utf-8"):
+    with open(input_file, "r", encoding=enc) as f:
+        filtered_lines = [line for line in f if line.startswith("D")]
+
+    # Convert filtered lines into DataFrame
+    from io import StringIO
+    df = pd.read_csv(
+        StringIO("".join(filtered_lines)),
+        delimiter=",",
+        low_memory=False
+    )
+    return df
+
+
+# delete space in front of strings
+def no_white_space(df, sep=' '):
+    col = []
+    for c in df.columns:
+        col.append(c.split(sep)[-1])
+    df.columns = col
+
+
+# convert strings to actual dates
+def to_date(df, col, format='mixed'):
+    df[col] = pd.to_datetime(df[col], format=format)
