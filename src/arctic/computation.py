@@ -1,4 +1,7 @@
-import pandas as pd
+import warnings
+
+import numpy as np
+from sklearn import clone
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import pdist
@@ -8,24 +11,28 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 from .plot import plot_pca
 from .utils import *
 
+
 def compute_pca(df, comp=4, **kwargs):
-    """
+    r"""
     Computes Principal Component Analysis (PCA) for a given dataset.
 
-    :param df (pd.DataFrame): Input dataframe containing numerical data.
-    :param comp (int): Number of principal components to retain.
+    :param df: Input data containing numerical data.
+    :type df: pandas.DataFrame
+    :param comp: Number of principal components to retain.
+    :type comp: int
     :param kwargs:
-        - `plot_type` (str, optional): '2D' or '3D' plot type. Default is '2D'.
-        - `scaler` (object, optional): Scaler to normalize data. Default is StandardScaler.
-        - `n_arrows` (int, optional): Number of principal component vectors to display. Default is 4.
-        - `savefig` (str, optional): File path to save the plot.
-        - `savecsv` (str, optional): File path to save PCA scores.
+        `plot_type` (str, optional): '2D' or '3D' plot type. Default is '2D'.
+        `scaler` (object or type, optional): A scaler instance or class. Default is StandardScaler.
+        `n_arrows` (int, optional): Number of principal component vectors to display. Default is 4.
+        `savefig` (str, optional): File path to save the plot.
+        `savecsv` (str, optional): File path to save PCA scores.
 
-    :raises ValueError: If `comp` is greater than the number of features in `df`.
-    :raises TypeError: If `df` is not a Pandas DataFrame.
+    :raises ValueError: If `comp` exceeds the number of input features in `df`.
+    :raises TypeError: If `df` is not a Pandas DataFrame or contains non-numeric data.
     :raises FileNotFoundError: If `savefig` or `savecsv` directories do not exist.
 
-    :return: pd.DataFrame containing principal component scores and explained variance.
+    :return: DataFrame containing principal component loadings and explained variance statistics.
+    :rtype: pandas.DataFrame
     """
     plot_type = kwargs.get('plot_type', '2D')
     scaler = kwargs.get('scaler', StandardScaler)
@@ -37,14 +44,14 @@ def compute_pca(df, comp=4, **kwargs):
         labels = df['label']
         data = df.drop('label', axis=1)
     else:
-        labels=None
+        labels = None
         data = df
 
     # Scale data with StandardScaler x = (z-u)/s with u being the mean and s the standard deviation
     if scaler:
         try:
             # Check if scaler is a class, not an instance
-            if isinstance(scaler, type):
+            if callable(scaler):
                 scaler = scaler()
 
             scaler.fit(data)
@@ -85,31 +92,41 @@ def compute_pca(df, comp=4, **kwargs):
     return scores
 
 
-
 def generate_reference_HPPP(X):
-    """
+    r"""
     Generates a reference dataset using a Homogeneous Poisson Point Process (HPPP).
 
-    :param X: (ndarray) Input data.
+    :param X: Input data.
+    :type X: numpy.ndarray
 
     :raises ValueError: If `X` contains non-numeric values.
 
-    :return: ndarray containing a randomly generated reference dataset.
+    :return: ndarray containing a randomly generated reference data matching the shape and range of 'X'
+    :rtype: numpy.ndarray
     """
+    # check if X is numeric
     return np.random.uniform(low=X.min(axis=0), high=X.max(axis=0), size=X.shape)
 
 
-def within_cluster_dispsersion(X, labels):
-    """
-    Computes the within-cluster dispersion for hierarchical clustering.
+def within_cluster_dispersion(X, labels, **kwargs):
+    r"""
+    Computes the within-cluster dispersion for evaluating clustering compactness.
 
-    :param X: (ndarray) Input data.
-    :param labels: (ndarray) Cluster labels for each sample.
+    :param X: Input data.
+    :type X: numpy.ndarray
+    :param labels: Cluster labels for each sample.
+    :type labels: numpy.ndarray
 
     :raises ValueError: If `X` and `labels` have mismatched dimensions.
 
     :return: float representing within-cluster dispersion value.
+    :rtype: float
     """
+
+    # check dimensions
+    if len(X) != len(labels):
+        raise ValueError("Mismatched dimensions of input data 'X' and 'labels'.")
+
     Wk = 0
     unique_clusters = np.unique(labels)
 
@@ -125,43 +142,57 @@ def within_cluster_dispsersion(X, labels):
 
 
 def gap_statistic(X, k_max, n_replicates=20, **kwargs):
-    """
+    r"""
     Computes the Gap Statistic to determine the optimal number of clusters.
 
-    :param X: (ndarray) Input data.
-    :param k_max: (int) Maximum number of clusters to evaluate.
-    :param n_replicates: (int) Number of bootstrap samples.
+    :param X: Input data.
+    :type X: numpy.ndarray
+    :param k_max: Maximum number of clusters to evaluate.
+    :type k_max: int
+    :param n_replicates: Number of reference datasets to generate for each k.
+    :type n_replicates: int
     :param kwargs:
-        - `model` (object, optional): Clustering model. Default is AgglomerativeClustering.
+        model (object, optional): A clustering model instance (e.g. `KMeans(n_init=10)`).
+                                  Must support `fit_predict(X)` and accept `n_clusters` via `set_params`.
+        weights (array-like, optional): Not used in current implementation. Reserved for future use.
+                                  Sample weights for computing weighted dispersion.
+
+
 
     :raises ValueError: If `k_max` or `n_replicates` is less than 1.
-    :raises TypeError: If `X` is not a numeric ndarray.
+                        If a fitted model is passed instead of an unfitted instance.
+    :raises TypeError: If the passed model does accept `n_clusters`
 
-    :return: np.ndarray containing gap values and standard deviations for each k.
+    :return: Array of shape (k_max, 2) containing gap values and standard deviations.
+    :rtype: numpy.ndarray
     """
-    model = kwargs.get('model', AgglomerativeClustering)
+    model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
 
     if k_max <= 0:
         raise ValueError(f"Maximum number of clusters to consider should be a positive integer, got {k_max} instead")
     if n_replicates <= 0:
-        raise ValueError(
-            f"Number of reference data sets to generate should be a positive integer, got {n_replicates} instead")
+        raise ValueError(f"Number of reference data sets to generate should be a positive integer, got {n_replicates} instead")
+
+    # check if model is fitted, does not support n_clusters or fit_predict
+    check_unfitted_model(model)
 
     gap_values = []
 
     for k in range(1, k_max + 1):
-        # Fit Agglomerative Clustering to the original data
-        clustering = AgglomerativeClustering(n_clusters=k, linkage='average')
+        clustering = clone(model).set_params(n_clusters=k)
+        model_ref = clone(model).set_params(n_clusters=k)
+
+        print(f"Using {clustering} as model")
+        # Fit model to the original data
         labels = clustering.fit_predict(X)
-        log_WK = np.log(within_cluster_dispsersion(X, labels))
+        log_WK = np.log(within_cluster_dispersion(X, labels))
 
         # Compute the reference dispersion values
         log_Wk_star = []
         for _ in range(n_replicates):
             ref_data = generate_reference_HPPP(X)  # fixed sample size
-            model_ref = AgglomerativeClustering(n_clusters=k, linkage='average')
             ref_labels = model_ref.fit_predict(ref_data)
-            log_Wk_star.append(np.log(within_cluster_dispsersion(ref_data, ref_labels)))
+            log_Wk_star.append(np.log(within_cluster_dispersion(ref_data, ref_labels)))
 
         # Compute gap
         gap = np.mean(log_Wk_star) - log_WK
@@ -175,13 +206,39 @@ def gap_statistic(X, k_max, n_replicates=20, **kwargs):
 
 
 def elbow_method(X, k_max, **kwargs):
+    r"""
+    Computes distortion and inertia metrics to determine the optimal number of clusters using the elbow method.
+
+    :param X: Input data.
+    :type X: numpy.ndarray
+    :param k_max: Maximum number of clusters to evaluate.
+    :type k_max: int
+    :param kwargs:
+    :param kwargs:
+        model (object, optional): A clustering model instance (e.g. `KMeans(n_init=10)`).
+                                  Must support `fit_predict(X)` and accept `n_clusters` via `set_params`.
+                                  Default is AgglomerativeClustering(linkage='average').
+        weights (array-like, optional): Sample weights for computing weighted distortion.
+
+    :raises ValueError: If `k_max` is less than 1.
+    :raises TypeError: If `X` is not a NumPy ndarray.
+
+    :return: Two lists: mean distortions and total inertias for each cluster count.
+    :rtype: tuple[list[float], list[float]]
+    """
+
     weights = kwargs.get('weights', None)
+    model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
+
+    # check if model is fitted, does not support n_clusters or fit_predict
+    check_unfitted_model(model)
 
     inertias = []
     distortions = []
 
     for k in range(1, k_max + 1):
-        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
+        model = clone(model).set_params(n_clusters=k)
+
         labels = model.fit_predict(X)
         n_total = X.shape[0]
         all_sq_dists = np.zeros(n_total)
@@ -194,17 +251,50 @@ def elbow_method(X, k_max, **kwargs):
             squ_dists = np.sum((cluster_points - ci) ** 2, axis=1)
             all_sq_dists[labels == l] = squ_dists
 
-        distortions.append(np.mean(all_sq_dists))
+        distortions.append(np.average(all_sq_dists, weights=weights))
         inertias.append(np.sum(all_sq_dists))
     return distortions, inertias
 
 
-def silhouette_method(X, k_max):
+def silhouette_method(X, k_max, **kwargs):
+    r"""
+    Computes scores for a range of cluster counts using the silhouette method.
+
+    :param X: Input data.
+    :type X: numpy.ndarray
+    :param k_max: Maximum number of clusters to evaluate (must be ≥ 2).
+    :type k_max: int
+    :param kwargs:
+        `model` (object, optional): Clustering model class with a `fit_predict` method.
+                    Default is sklearn's AgglomerativeClustering.
+        `labels` (numpy.ndarray, optional): Array with the labels for each k.
+                    Has to have shape (n_samples, k_max)
+
+    :raises ValueError: If `k_max` is less than 2.
+    :raises TypeError: If `X` is not a NumPy ndarray.
+
+    :return: List of silhouette scores for each number of clusters from 2 to `k_max`.
+    :rtype: list[float]
+    """
+    model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
+    given_labels = kwargs.get('labels', None)
+
+    # if given_labels is not None and given_labels.shape[1] != k_max-1:
+    #     raise ValueError("The shape of the given labels needs to be (n_samples, 'k_max')."
+    #                      f"The passed labels have shape {given_labels.shape}")
+
+    # check if model is fitted, does not support n_clusters or fit_predict
+    check_unfitted_model(model)
+
     s = []
     if k_max < 2:
-        print("Invalid value for silhouette method")
-    for k in range(2, k_max+1):
-        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
-        labels = model.fit_predict(X)
+        raise ValueError("k_max must be at least 2 for silhouette method.")
+    for k in range(2, k_max + 1):
+        if given_labels:
+            labels = given_labels[k-2]
+        else:
+            model = clone(model).set_params(n_clusters=k)
+            labels = model.fit_predict(X)
+
         s.append(silhouette_score(X, labels))
     return s
