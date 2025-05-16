@@ -1,17 +1,27 @@
-# necessary libraries
-# could be improved?
 from .utils import *
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+import matplotlib.colors as mcolors
+from matplotlib.colors import ListedColormap
+
+
+import math
+import matplotlib.cm as cm
+
+
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import pandas as pd
 import warnings
 
 
 def plot_dendrogram(model,
                     **kwargs):
-    """
+    r"""
     Plots a dendrogram for a given hierarchical clustering model with computed distances between samples.
 
     :param model: A clustering model that must have 'children_', 'distances_', and 'labels_' attributes.
@@ -73,7 +83,7 @@ def plot_dendrogram(model,
 
 def plot_correlation(df,
                      **kwargs):
-    """
+    r"""
     Plots a correlation matrix for a given DataFrame.
     Recommended to use equally perceived colormaps with 0 as white, according to https://matplotlib.org/stable/users/explain/colors/colormaps.html
     :param df: Input pandas DataFrame
@@ -144,9 +154,8 @@ def plot_correlation(df,
 def plot_pca(pca, x_reduced,
              features=None,
              labels=None,
-             savefig=None,
              **kwargs):
-    """
+    r"""
     Plots a 2D or 3D Principal Component Analysis (PCA) biplot, visualizing the dataset
     and the most important principal component vectors.
 
@@ -170,6 +179,7 @@ def plot_pca(pca, x_reduced,
     """
     plot_type = kwargs.get('plot_type', '2D')
     n_arrows = kwargs.get('n_arrows', 4)
+    savefig = kwargs.get('savefig', None)
 
     # Init values for plotting
     try:
@@ -273,7 +283,7 @@ def plot_pca(pca, x_reduced,
 
 
 def plot_radar(df, label='label', **kwargs):
-    """
+    r"""
     Plots a radar chart to visualize feature importance or differences across clusters.
 
     :param df: (pd.DataFrame) DataFrame containing feature values and cluster labels.
@@ -303,12 +313,7 @@ def plot_radar(df, label='label', **kwargs):
     try:
         # check for custom aggregation function
         grouped = df.groupby(label)
-        if callable(agg_func):
-            val = grouped.apply(agg_func)
-        elif isinstance(agg_func, str) and hasattr(grouped, agg_func):
-            val = getattr(grouped, agg_func)()
-        else:
-            raise ValueError("Invalid 'agg_func'. Use 'mean', 'median', 'sum', or a callable function.")
+        val = apply_aggregation(grouped, agg_func)
     except KeyError as e:
         raise KeyError(
             "Please give a valid label or ensure that your Pandas DataFrame contains a column named 'label'.")
@@ -364,7 +369,7 @@ def plot_radar(df, label='label', **kwargs):
 
 # Violin plot for each cluster to compare their characteristics
 def plot_violin(df, label='label', **kwargs):
-    """
+    r"""
     Plots violin plots to compare feature distributions across clusters.
 
     :param df: (pd.DataFrame) DataFrame containing numerical features and cluster labels.
@@ -440,64 +445,204 @@ def plot_violin(df, label='label', **kwargs):
     plt.show()
     return
 
+def plot_polar_stereo(
+        df, P=10, T=-50,
+        mode='single',  # modify mode on given arguments?
+        **kwargs):
+    r"""
+    Plots polar stereographic projections of ellipses representing polar vortices.
 
-from src.arctic.constants import *
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import pandas as pd
+    This function supports multiple visualization modes: single plot, aggregated plot, 
+    animation, subplots, or overlay of multiple ellipses.
 
+    :param df: DataFrame containing ellipse parameters (area, latcent, loncent, theta, ar)
+    :type df: pd.DataFrame or pd.Series
+    :param P: Pressure level in hPa, defaults to 10
+    :type P: int or float, optional
+    :param T: Temperature in degrees Celsius, defaults to -50
+    :type T: int or float, optional
+    :param mode: Visualization mode, one of 'single', 'aggregate', 'animate', 'subplot', or 'overlay', defaults to 'single'
+    :type mode: str, optional
+    :param kwargs: Additional arguments:
+        - `agg_func` (str or callable, optional): Aggregation function for 'aggregate' mode
+        - `time_col` (str, optional): Column name containing time data, required for 'animate' mode
+        - `max_subplots` (int, optional): Maximum number of subplots for 'subplot' mode, defaults to 4
+        - `savefig` (str, optional): Path to save the figure, defaults to None
+        - `filled` (bool, optional): Whether to fill ellipses or just draw outlines, defaults to False
+        - `cmap` (str, optional): Colormap for ellipses, defaults to 'viridis'
+        - `max_brightness` (float, optional): Maximum brightness for colormap, defaults to 0.7
 
-def plot_with_dataframe(df, P=10, T=-50):
+    :raises AssertionError: If 'time_col' is not provided for 'animate' mode
+    :raises ValueError: If required columns are missing from the DataFrame
+
+    :return: None
     """
-    WIP - Plots a polar stereographic map using data from a DataFrame and local coastlines.
+    agg_func = kwargs.get('agg_func', None)
+    time_col = kwargs.get('time_col', None)
+    max_subplots = kwargs.get('max_subplots', 4)
+    savefig = kwargs.get('savefig', None)
+    filled = kwargs.get('filled', False)
+    cmap = kwargs.get('cmap', 'viridis')
+    max_brightness = kwargs.get('max_brightness', 0.7)
 
-    :param df: (pd.DataFrame): DataFrame with latitude, longitude, and other relevant columns.
-    :param P: pressure to compute geopotential height
-    :param T: assumed temperature at that height
-    """
-
-    # Generate sample geopotential height data (replace with real computations)
-    lon = np.linspace(0, 360, 361)
-    lat = np.linspace(90, 20, 71)  # From the North Pole to mid-latitudes
+    # for future use
+    """lon = np.linspace(0, 360, 361)
+    lat = np.linspace(90, 40, 71)  # From the North Pole to mid-latitudes
     lon2d, lat2d = np.meshgrid(lon, lat)
 
-    # Note: gph kann sich ändern, als Linien ergänzen?
-    # # compute geopotential height
+    # compute geopotential height
     T = T + ZERO_DEG  # convert T to Kelvin
     z = R * T / g * np.log(P0 / P)
     gph = np.full_like(lon2d, z)
+    """
 
-    # Extract specific columns from the DataFrame
-    lat_points = df['latcent']
-    lon_points = df['loncent']
+    # deal with differences between pd.Series and pd.DataFrame
+    df = arctic.norm_series_df(df)
+    arctic.validate_columns(df, ['area', 'latcent', 'loncent', 'theta', 'ar'])
 
-    # Create a polar stereographic plot
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': ccrs.NorthPolarStereo()})
+    if mode == "aggregate":
+        df = arctic.apply_aggregation(df, agg_func=agg_func)
+        plot_polar_stereo(df)
 
-    # Plot data as filled contours, show changing gph as shades of grey
-    # include color bar if so
-    # contour = ax.contourf(lon2d, lat2d, gph, levels=20, transform=ccrs.PlateCarree(), cmap='Greys')
+    elif mode == "animate":
+        assert time_col is not None, "time_col required for animation mode"
+        arctic.create_animation(df, time_col, filled, savefig)
 
-    # Add contour lines for gph
-    ax.contour(lon2d, lat2d, gph, levels=10, colors='black', linewidths=1, transform=ccrs.PlateCarree())
+    elif mode == "subplot":
+        count = min(len(df), max_subplots)
+        ncols = math.ceil(math.sqrt(count))
+        nrows = math.ceil(count / ncols)
 
-    # Add local coastlines from Cartopy's features
-    coastlines = cfeature.NaturalEarthFeature('physical', 'coastline', '50m', edgecolor='black', facecolor='none')
-    ax.add_feature(coastlines, linewidth=0.5)
+        # Sort and check time column
+        if time_col and time_col in df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                df[time_col] = pd.to_datetime(df[time_col])
+            df = df.sort_values(by=time_col).reset_index(drop=True)
+        else:
+            df = df.reset_index(drop=True)
+            time_col = None
 
-    # Add points from the DataFrame
-    ax.scatter(lon_points, lat_points, color='red', s=10, transform=ccrs.PlateCarree(), label='Data Points')
+        groups = np.array_split(df, count)
+        fig, axs = plt.subplots(nrows, ncols, figsize=(5 * ncols, 5 * nrows),
+                                subplot_kw={'projection': ccrs.NorthPolarStereo()})
+        axs = axs.flatten()
 
-    # Add gridlines
-    ax.gridlines(draw_labels=False, color='gray', linestyle='--')
+        for i, (ax, group) in enumerate(zip(axs, groups)):
+            ax.set_extent([-180, 180, 40, 90], crs=ccrs.PlateCarree())
+            ax.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m',
+                                                        edgecolor='black', facecolor='none'), linewidth=0.5)
 
-    # Set the extent (view) for the polar plot
-    # ax.set_extent([-180, 180, 20, 90], crs=ccrs.PlateCarree())
+            if len(group) > 10:
+                print(f"Warning: Subplot {i + 1} has {len(group)} ellipses. This may be hard to distinguish.")
 
-    # Add a colorbar
-    # cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
-    # cbar.set_label('Geopotential Height (gpm)')
+            # Color setup
+            if time_col:
+                colors = cm.viridis(np.linspace(0.2, 0.9, len(group)))
+                labels = group[time_col].dt.strftime("%Y-%m-%d").tolist()
+                title = f"{labels[0]} to {labels[-1]}"
+            else:
+                colors = cm.tab10(np.linspace(0, 1, len(group)))
+                labels = [f"PV {j + 1}" for j in range(len(group))]
+                title = f"Subplot {i + 1}"
 
-    # Add a legend
-    ax.legend(loc='lower left')
-    fig.autofmt_xdate(rotation=45)
+            for j, (_, row) in enumerate(group.iterrows()):
+                x, y, _ = arctic.compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+                arctic.plot_ellipse(ax, x, y, row.loncent, row.latcent, filled=filled,
+                                    color=colors[j], label=labels[j])
+
+            ax.set_title(title)
+            ax.legend(loc='lower left', fontsize='small')
+
+            # Hide unused subplots
+        for j in range(len(groups), len(axs)):
+            fig.delaxes(axs[j])
+
+        plt.tight_layout()
+        plt.show()
+    elif mode == "overlay":
+        original_cmap = cm.get_cmap(cmap)
+        trimmed_colors = original_cmap(np.linspace(0, max_brightness, 256))
+        muted_cmap = ListedColormap(trimmed_colors)
+
+        fig, ax = arctic.create_polar_ax()
+
+        # create color gradient if time column is available
+        if time_col is not None:
+            if not pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                df[time_col] = pd.to_datetime(df[time_col])
+            df = df.sort_values(by=time_col).reset_index(drop=True)
+            c = muted_cmap(np.linspace(0, 1, len(df)))
+        else:
+            c = ['red'] * len(df)
+
+        # Plot each sample with appropriate color
+        for i, row in df.iterrows():
+            x, y, _ = arctic.compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+            label = 'Vortex ellipse' if i == 0 else None
+            if filled:
+                ax.fill(x, y, color=c[i], alpha=0.5, label=label) if filled else ax.plot(x, y, color=c[i],
+                                                                                          label=label)
+            else:
+                ax.plot(x, y, color=c[i], label=label)
+
+            center_label = 'Center' if i == 0 else None
+            ax.scatter(row.loncent, row.latcent, color=c[i], marker='x',
+                       transform=ccrs.PlateCarree(), label=center_label, zorder=5)
+        if time_col:
+            norm = mcolors.Normalize(vmin=0, vmax=len(df) - 1)
+            sm = cm.ScalarMappable(cmap=muted_cmap, norm=norm)
+            sm.set_array([])
+            cbar = plt.colorbar(sm, ax=ax, orientation='horizontal', pad=0.05)
+            cbar.set_label(f'Time progression ({df[time_col].iloc[0].date()} → {df[time_col].iloc[-1].date()})')
+
+        # One legend
+        handles, labels = ax.get_legend_handles_labels()
+        unique = dict(zip(labels, handles))
+        ax.legend(unique.values(), unique.keys(), loc='upper left')
+
+        fig.autofmt_xdate(rotation=45)
+        plt.show()
+
+    else:
+        for _, sample in df.iterrows():
+            # extract parameters for ellipse computation
+            area = sample.area  # km², example area
+            latcent = sample.latcent  # Latitude of vortex center
+            loncent = sample.loncent  # Longitude of vortex center
+            theta = sample.theta  # Angle of the major axis in degrees
+            ar = sample.ar  # Aspect ratio (major / minor axis)
+
+            x_final, y_final, _ = arctic.compute_ellipse(area, ar, theta, loncent, latcent)
+
+            fig, ax = arctic.create_polar_ax()
+
+            import matplotlib.ticker as mticker
+
+            # Add gridlines: 8 longitude lines every 45°, latitude every 10°
+            gl = ax.gridlines(crs=ccrs.PlateCarree(),
+                              draw_labels=True,
+                              color='gray',
+                              linestyle='--',
+                              linewidth=0.8)
+
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
+            # gl.ylocator = mticker.FixedLocator(np.arange(40, 91, 10))
+
+            arctic.plot_ellipse(ax, x_final, y_final, loncent, latcent, filled=filled)
+            # Add a legend
+            ax.legend(loc='upper left')
+            fig.autofmt_xdate(rotation=45)
+            if savefig:
+                arctic.check_path(savefig)
+            plt.show()
+
+            # Plot data as filled contours, show changing gph as shades of grey
+            # include color bar if so
+            # contour = ax.contourf(lon2d, lat2d, gph, levels=20, transform=ccrs.PlateCarree(), cmap='Greys')
+
+            # # Add contour lines for gph or something else
+            # ax.contour(lon2d, lat2d, gph, levels=10, colors='black', linewidths=1, transform=ccrs.PlateCarree())
+
+            # Add a colorbar
+            # cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
+            # cbar.set_label('Geopotential Height (gpm)')

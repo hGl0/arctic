@@ -1,15 +1,19 @@
 import warnings
+from typing import List, Tuple, Optional, Dict, Any, Union, Callable
 
 import numpy as np
+import pandas as pd
 from sklearn import clone
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import pdist
-from sklearn.cluster import AgglomerativeClustering, KMeans
-from sklearn.metrics import silhouette_score, silhouette_samples
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+import pyproj
 
 from .plot import plot_pca
-from .utils import *
+from .utils import check_path, check_unfitted_model
 
 
 def compute_pca(df, comp=4, **kwargs):
@@ -88,7 +92,7 @@ def compute_pca(df, comp=4, **kwargs):
     if savecsv:
         check_path(savecsv)
         scores.to_csv(savecsv)
-
+# only scores really usefull? Maybe also transformed dataset?
     return scores
 
 
@@ -171,7 +175,8 @@ def gap_statistic(X, k_max, n_replicates=20, **kwargs):
     if k_max <= 0:
         raise ValueError(f"Maximum number of clusters to consider should be a positive integer, got {k_max} instead")
     if n_replicates <= 0:
-        raise ValueError(f"Number of reference data sets to generate should be a positive integer, got {n_replicates} instead")
+        raise ValueError(
+            f"Number of reference data sets to generate should be a positive integer, got {n_replicates} instead")
 
     # check if model is fitted, does not support n_clusters or fit_predict
     check_unfitted_model(model)
@@ -291,10 +296,66 @@ def silhouette_method(X, k_max, **kwargs):
         raise ValueError("k_max must be at least 2 for silhouette method.")
     for k in range(2, k_max + 1):
         if given_labels:
-            labels = given_labels[k-2]
+            labels = given_labels[k - 2]
         else:
             model = clone(model).set_params(n_clusters=k)
             labels = model.fit_predict(X)
 
         s.append(silhouette_score(X, labels))
     return s
+
+
+# maybe in utils?
+# projection modification?
+def compute_ellipse(area, ar, theta, loncent, latcent,
+                    num_points = 200):
+    r"""
+    Computes the coordinates of a rotated ellipse based on geophysical parameters and
+    projects it onto a polar stereographic coordinate system centered near the North Pole.
+
+    :param area: Area of the ellipse in square kilometers.
+    :type area: float
+    :param ar: Aspect ratio of the ellipse (major axis / minor axis).
+    :type ar: float
+    :param theta: Orientation angle of the major axis in radiant, measured counter-clockwise from east.
+    :type theta: float
+    :param loncent: Longitude of the ellipse center in degrees.
+    :type loncent: float
+    :param latcent: Latitude of the ellipse center in degrees.
+    :type latcent: float
+    :param num_points: Number of points to use for generating the ellipse perimeter. Default is 200.
+    :type num_points: int, optional
+
+    :raises ValueError:
+    :raises TypeError:
+
+    :return: Triple containing the projected x and y coordinates (in meters) of the rotated ellipse and projection.
+    :rtype: tuple of np.ndarray
+    """
+    # Calculate semi-major (a) and semi-minor (b) axes
+    b = np.sqrt(area / (np.pi * ar))  # Minor axis length [km]
+    a = ar * b  # Major axis length [km]
+
+    # Create points for the ellipse in x-y coordinate system
+    t = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+    x = a * np.cos(t)  # [km]
+    y = b * np.sin(t)  # [km]
+
+    # Rotate the ellipse by theta degrees
+    theta_rad = theta + np.radians(90)  # radiant, account for 0° in x-y not equal 0° North Polar Projection
+    x_rot = x * np.cos(theta_rad) - y * np.sin(theta_rad)  # [km]
+    y_rot = x * np.sin(theta_rad) + y * np.cos(theta_rad)  # [km]
+
+    # Define stereographic projection centered on the ellipse
+    proj_pyproj = pyproj.Proj(proj='stere',
+                              lat_0=90,  # latcent
+                              lon_0=0,  # loncent
+                              lat_ts=60,  # latcent
+                              ellps='WGS84')
+    # Convert center to x-y
+    x_center, y_center = proj_pyproj(loncent, latcent)
+
+    # Translate ellipse to the center in meters
+    x_final = x_center + x_rot * 1000  # if x_rot is in km
+    y_final = y_center + y_rot * 1000
+    return x_final, y_final, proj_pyproj
