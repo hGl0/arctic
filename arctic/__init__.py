@@ -1,9 +1,9 @@
 # Key functionalities
-from .computation import *
-from .plot import *
+from .analysis import *
+from .visualization import *
 
 # Constants
-from .constants import *
+from arctic.core.constants import *
 
 # Package metadata
 __version__ = "0.1.0"

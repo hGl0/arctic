@@ -3,7 +3,7 @@
 
 import argparse
 import os
-import src.arctic as arctic
+import arctic as arctic
 from sklearn.cluster import AgglomerativeClustering
 
 
@@ -19,9 +19,9 @@ def process_data(input_file, output_path, model):
 
     # Correlation
     try:
-        arctic.plot.plot_correlation(data,
-                                     savecsv=f"{output_path}/corr_results.csv",
-                                     savefig=f"{output_path}/corr_plot.png")
+        arctic.visualization.plot.plot_correlation(data,
+                                                   savecsv=f"{output_path}/corr_results.csv",
+                                                   savefig=f"{output_path}/corr_plot.png")
         print("Successfully plotted correlation matrix.")
     except Exception as e:
         raise Exception(f"Error while plotting correlation matrix: {e}")
