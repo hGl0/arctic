@@ -9,7 +9,7 @@ import cartopy.feature as cfeature
 from typing import List, Tuple, Optional
 
 from arctic.analysis.geometry import compute_ellipse
-from arctic.analysis.pca import compute_pca
+from arctic.analysis.decomposition import compute_pca
 
 
 

@@ -78,6 +78,13 @@ def plot_pca(pca: Any, x_reduced: np.ndarray,
     n_arrows = kwargs.get('n_arrows', 4)
     savefig = kwargs.get('savefig', None)
 
+    if features is None:
+        n_features = pca.components_.shape[1]
+        features = [f"var{i+1}" for i in range(n_features)]
+
+    if n_arrows > n_features:
+        n_arrows = n_features
+
     # Init values for plotting
     try:
         score = x_reduced[:, :]

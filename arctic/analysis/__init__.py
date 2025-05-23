@@ -1,5 +1,7 @@
-from .pca import compute_pca
+from .decomposition import compute_pca, compute_eeof
 from .clustering import *
 from .metrics import *
 
-__all__ = ["gap_statistic", "elbow_method", "silhouette_method", "compute_pca", "within_cluster_dispersion"]
+__all__ = ["gap_statistic", "elbow_method", "silhouette_method",
+           "compute_pca", "compute_eeof",
+           "within_cluster_dispersion"]

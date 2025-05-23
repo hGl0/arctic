@@ -76,6 +76,7 @@ def elbow_method(X: np.ndarray, k_max: int, **kwargs) -> Tuple[List[float], List
 
     weights = kwargs.get('weights', None)
     model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
+    verbose = kwargs.get('verbose', False)
 
     # check if model is fitted, does not support n_clusters or fit_predict
     check_unfitted_model(model)
@@ -85,6 +86,7 @@ def elbow_method(X: np.ndarray, k_max: int, **kwargs) -> Tuple[List[float], List
 
     for k in range(1, k_max + 1):
         model = clone(model).set_params(n_clusters=k)
+        if verbose: print(f"Using {model} as model")
 
         labels = model.fit_predict(X)
         n_total = X.shape[0]
@@ -129,6 +131,7 @@ def gap_statistic(X: np.ndarray, k_max: int, n_replicates: int = 20, **kwargs) -
     :rtype: numpy.ndarray
     """
     model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
+    verbose = kwargs.get('verbose', False)
 
     if k_max <= 0:
         raise ValueError(f"Maximum number of clusters to consider should be a positive integer, got {k_max} instead")
@@ -145,7 +148,7 @@ def gap_statistic(X: np.ndarray, k_max: int, n_replicates: int = 20, **kwargs) -
         clustering = clone(model).set_params(n_clusters=k)
         model_ref = clone(model).set_params(n_clusters=k)
 
-        print(f"Using {clustering} as model")
+        if verbose: print(f"Using {clustering} as model")
         # Fit model to the original data
         labels = clustering.fit_predict(X)
         log_WK = np.log(within_cluster_dispersion(X, labels))
