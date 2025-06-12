@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
@@ -38,19 +40,18 @@ def compute_pca(df: pd.DataFrame, n_comp: int = 4, **kwargs) -> Tuple[np.ndarray
     else:
         data = df
 
-    # Scale data with StandardScaler x = (z-u)/s with u being the mean and s the standard deviation
-    if scaler:
-        try:
-            # Check if scaler is a class, not an instance
-            if callable(scaler):
-                scaler = scaler()
+    try:
+        # Check if scaler is a class, not an instance
+        if callable(scaler):
+            scaler = scaler()
 
             scaler.fit(data)
             X = scaler.transform(data)
-        except TypeError as e:
-            raise TypeError(f'Type Error: {e}. \n Ensure your dataframe has only numeric types.')
-    else:
-        X = data
+        else:
+            X = data
+    except TypeError as e:
+        raise TypeError(f'Type Error: {e}. \n Ensure your dataframe has only numeric types.')
+
 
     # compute PCA
     try:
@@ -68,13 +69,17 @@ def compute_pca(df: pd.DataFrame, n_comp: int = 4, **kwargs) -> Tuple[np.ndarray
     #              plot_type=plot_type,
     #              n_arrows=n_arrows)
 
+    if n_comp > pca.components_.shape[1]:
+        warnings.warn(f'Less components than given. Reset n_comp to {pca.components_.shape[1]}')
+        n_comp = pca.components_.shape[1]
+
     # generate overview of influence of each features on each principal component
-    scores = pd.DataFrame(pca.components_[:comp].T,
-                          columns=[f'PC{i}' for i in range(comp)],
+    scores = pd.DataFrame(pca.components_[:n_comp].T,
+                          columns=[f'PC{i}' for i in range(n_comp)],
                           index=data.columns)
 
-    expl_var_row = pd.DataFrame([pca.explained_variance_[:comp], pca.explained_variance_ratio_[:comp]],
-                                columns=[f"PC{i}" for i in range(comp)],
+    expl_var_row = pd.DataFrame([pca.explained_variance_[:n_comp], pca.explained_variance_ratio_[:n_comp]],
+                                columns=[f"PC{i}" for i in range(n_comp)],
                                 index=['Expl_var', 'Expl_var_ratio'])
     scores = pd.concat([scores, expl_var_row])
 
@@ -104,15 +109,17 @@ def compute_eeof(signal, M=400, n_components=9):
 
     # Apply PCA to the delay matrix
     pca = PCA(n_components=n_components)
-    pcs = pca.fit_transform(delay_matrix)
-    eigenvalues = pca.explained_variance_
+    epcs = pca.fit_transform(delay_matrix)
+    eeofs = pca.components_
+    eigenvalues = pca.explained_variance_ratio_
 
     # Reconstruct the signal using the first n_components
-    reconstructed = pca.inverse_transform(pcs)
+    reconstructed = pca.inverse_transform(epcs)
     # reconstructed = delay_matrix_recon.mean(axis=1)
 
     # Pad reconstructed to match original length
     full_reconstructed = np.full((n,M), np.nan)
     full_reconstructed[M - 1:] = reconstructed
 
-    return full_reconstructed, pca, delay_matrix, eigenvalues
+    return epcs, eeofs, eigenvalues, full_reconstructed, delay_matrix
+

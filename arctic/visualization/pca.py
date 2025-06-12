@@ -81,6 +81,8 @@ def plot_pca(pca: Any, x_reduced: np.ndarray,
     if features is None:
         n_features = pca.components_.shape[1]
         features = [f"var{i+1}" for i in range(n_features)]
+    else:
+        n_features = len(features)
 
     if n_arrows > n_features:
         n_arrows = n_features
@@ -93,7 +95,10 @@ def plot_pca(pca: Any, x_reduced: np.ndarray,
         xs, ys, zs = score[:, :3].T
 
         scales = 1.0 / (score.max(axis=0) - score.min(axis=0))
-        scalex, scaley, scalez = scales[:3]
+        if min(3, n_features) < 3:
+            scalex, scaley = scales[:n_features]
+        else:
+            scalex, scaley, scalez = scales[:min(3, n_features)]
 
         # color by label
         if isinstance(labels, pd.Series):
