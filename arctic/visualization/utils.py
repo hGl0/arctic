@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import matplotlib.ticker as mticker
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -60,7 +61,11 @@ def feature_consistence(n_features: Optional[int],
             return n_features, list(unique_features)
         add_features += 1
 
-def create_animation(df: pd.DataFrame, time_col: str, filled: bool, savegif: Optional[str] = None) -> None:
+def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
+                     savegif: Optional[str] = None,
+                     split_col: Optional[str] = 'form',
+                     split: Optional[int] = 1,
+                     figsize: Optional[Tuple[int]] = (10,10)) -> None:
     r"""
     Creates an animation of ellipses over time using a DataFrame of ellipse parameters.
 
@@ -78,7 +83,7 @@ def create_animation(df: pd.DataFrame, time_col: str, filled: bool, savegif: Opt
 
     df = df.sort_values(by=time_col)
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=figsize)
 
     def update(frame):
         fig.clf()  # clear the figure entirely
@@ -89,21 +94,36 @@ def create_animation(df: pd.DataFrame, time_col: str, filled: bool, savegif: Opt
 
         # Add coastlines and gridlines
         ax.coastlines()
-        ax.gridlines(draw_labels=False, linestyle='--', color='gray')
 
         row = df.iloc[frame]
-        x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
-        plot_ellipse(ax, x, y, row.loncent, row.latcent, filled)
+        color = 'tab:blue'
+
+        if row.get(split_col) == split:
+            from arctic.visualization.map import plot_split
+            plot_split(ax, row, filled, color)
+        else:
+            x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+            plot_ellipse(ax, x, y, row.loncent, row.latcent, filled)
+
+        # Add gridlines: 8 longitude lines every 45°, latitude every 10°
+        gl = ax.gridlines(crs=ccrs.PlateCarree(),
+                          draw_labels=True,
+                          color='gray',
+                          linestyle='--',
+                          linewidth=0.8)
+
+        gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
+
 
     ani = animation.FuncAnimation(fig, update, frames=len(df), interval=1000, repeat=False, blit=False)
 
     if savegif:
-        ani.save(savegif, writer='pillow', fps=2)
+        ani.save(savegif, dpi=300, writer=animation.PillowWriter(fps=1))
     else:
         plt.show()
 
 
-def create_polar_ax() -> Tuple[plt.Figure, plt.Axes]:
+def create_polar_ax(figsize=(10,10)) -> Tuple[plt.Figure, plt.Axes]:
     r"""
     Creates a matplotlib figure and axis with North Polar Stereographic projection.
 
@@ -114,7 +134,7 @@ def create_polar_ax() -> Tuple[plt.Figure, plt.Axes]:
         - The axis object with North Polar Stereographic projection
     :rtype: tuple(matplotlib.figure.Figure, matplotlib.axes.Axes)
     """
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw={'projection': ccrs.NorthPolarStereo()})
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': ccrs.NorthPolarStereo()})
     ax.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m',
                                                 edgecolor='black', facecolor='none'), linewidth=0.5)
     ax.set_extent([-180, 180, 40, 90], crs=ccrs.PlateCarree())

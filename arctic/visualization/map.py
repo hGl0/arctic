@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 import math
 import matplotlib.colors as mcolors
-from matplotlib.colors import ListedColormap
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+from matplotlib.colors import ListedColormap
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
 
 from arctic.io.paths import check_path
 from arctic.analysis.geometry import compute_ellipse
@@ -20,7 +20,9 @@ from typing import Union
 
 
 def plot_polar_stereo(
-        df: Union[pd.DataFrame, pd.Series], P: Union[int, float] = 10, T: Union[int, float] = -50,
+        df: Union[pd.DataFrame, pd.Series],
+        P: Union[int, float] = 10,
+        T: Union[int, float] = -50,
         mode: str = 'single',  # modify mode on given arguments?
         **kwargs) -> None:
     r"""
@@ -58,6 +60,9 @@ def plot_polar_stereo(
     filled = kwargs.get('filled', False)
     cmap = kwargs.get('cmap', 'viridis')
     max_brightness = kwargs.get('max_brightness', 0.7)
+    split = kwargs.get('split', 1) # does it make sense?
+    split_col = kwargs.get('split_col', 'form')
+    figsize = kwargs.get('figsize', (10, 10))
 
     # for future use
     """lon = np.linspace(0, 360, 361)
@@ -76,11 +81,12 @@ def plot_polar_stereo(
 
     if mode == "aggregate":
         df = apply_aggregation(df, agg_func=agg_func)
-        plot_polar_stereo(df)
+        plot_polar_stereo(df, savefig=savefig, figsize=figsize)
 
     elif mode == "animate":
         assert time_col is not None, "time_col required for animation mode"
-        create_animation(df, time_col, filled, savefig)
+        # To Do: adjust for split event
+        create_animation(df, time_col, filled, savefig, figsize=figsize)
 
     elif mode == "subplot":
         count = min(len(df), max_subplots)
@@ -111,7 +117,7 @@ def plot_polar_stereo(
 
             # Color setup
             if time_col:
-                colors = cm.viridis(np.linspace(0.2, 0.9, len(group)))
+                colors = cm.viridis(np.linspace(0, 1, len(group)))
                 labels = group[time_col].dt.strftime("%Y-%m-%d").tolist()
                 title = f"{labels[0]} to {labels[-1]}"
             else:
@@ -120,10 +126,21 @@ def plot_polar_stereo(
                 title = f"Subplot {i + 1}"
 
             for j, (_, row) in enumerate(group.iterrows()):
-                x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
-                plot_ellipse(ax, x, y, row.loncent, row.latcent, filled=filled,
+                if row.get(split_col) == split:
+                    plot_split(ax, row, filled, color=colors[j])
+                else:
+                    x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+                    plot_ellipse(ax, x, y, row.loncent, row.latcent, filled=filled,
                                     color=colors[j], label=labels[j])
 
+            # Add gridlines: 8 longitude lines every 45°, latitude every 10°
+            gl = ax.gridlines(crs=ccrs.PlateCarree(),
+                              draw_labels=True,
+                              color='gray',
+                              linestyle='--',
+                              linewidth=0.8)
+
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
             ax.set_title(title)
             ax.legend(loc='lower left', fontsize='small')
 
@@ -133,6 +150,7 @@ def plot_polar_stereo(
 
         plt.tight_layout()
         plt.show()
+
     elif mode == "overlay":
         original_cmap = cm.get_cmap(cmap)
         trimmed_colors = original_cmap(np.linspace(0, max_brightness, 256))
@@ -147,27 +165,40 @@ def plot_polar_stereo(
             df = df.sort_values(by=time_col).reset_index(drop=True)
             c = muted_cmap(np.linspace(0, 1, len(df)))
         else:
-            c = ['red'] * len(df)
+            c = ['tab:blue'] * len(df)
 
         # Plot each sample with appropriate color
         for i, row in df.iterrows():
-            x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
-            label = 'Vortex ellipse' if i == 0 else None
-            if filled:
-                ax.fill(x, y, color=c[i], alpha=0.5, label=label) if filled else ax.plot(x, y, color=c[i],
-                                                                                          label=label)
+            if row.get(split_col) == split:
+                plot_split(ax, row, filled, color=c[i])
             else:
-                ax.plot(x, y, color=c[i], label=label)
+                x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+                label = 'Vortex ellipse' if i == 0 else None
 
-            center_label = 'Center' if i == 0 else None
-            ax.scatter(row.loncent, row.latcent, color=c[i], marker='x',
+                if filled:
+                    ax.fill(x, y, color=c[i], alpha=0.5, label=label) if filled else ax.plot(x, y, color=c[i],
+                                                                                              label=label)
+                else:
+                    ax.plot(x, y, color=c[i], label=label)
+
+                center_label = 'Center' if i == 0 else None
+                ax.scatter(row.loncent, row.latcent, color=c[i], marker='x',
                        transform=ccrs.PlateCarree(), label=center_label, zorder=5)
         if time_col:
             norm = mcolors.Normalize(vmin=0, vmax=len(df) - 1)
             sm = cm.ScalarMappable(cmap=muted_cmap, norm=norm)
             sm.set_array([])
-            cbar = plt.colorbar(sm, ax=ax, orientation='horizontal', pad=0.05)
+            cbar = plt.colorbar(sm, ax=ax, orientation='horizontal')
             cbar.set_label(f'Time progression ({df[time_col].iloc[0].date()} → {df[time_col].iloc[-1].date()})')
+
+        # Add gridlines: 8 longitude lines every 45°, latitude every 10°
+        gl = ax.gridlines(crs=ccrs.PlateCarree(),
+                          draw_labels=True,
+                          color='gray',
+                          linestyle='--',
+                          linewidth=0.8)
+
+        gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
 
         # One legend
         handles, labels = ax.get_legend_handles_labels()
@@ -188,9 +219,12 @@ def plot_polar_stereo(
 
             x_final, y_final, _ = compute_ellipse(area, ar, theta, loncent, latcent)
 
-            fig, ax = create_polar_ax()
+            fig, ax = create_polar_ax(figsize=figsize)
 
-            import matplotlib.ticker as mticker
+            if sample.get(split_col) == split:
+                plot_split(ax, sample, filled)
+            else:
+                plot_ellipse(ax, x_final, y_final, loncent, latcent)
 
             # Add gridlines: 8 longitude lines every 45°, latitude every 10°
             gl = ax.gridlines(crs=ccrs.PlateCarree(),
@@ -202,7 +236,7 @@ def plot_polar_stereo(
             gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
             # gl.ylocator = mticker.FixedLocator(np.arange(40, 91, 10))
 
-            plot_ellipse(ax, x_final, y_final, loncent, latcent, filled=filled)
+            # plot_ellipse(ax, x_final, y_final, loncent, latcent, filled=filled)
             # Add a legend
             ax.legend(loc='upper left')
             fig.autofmt_xdate(rotation=45)
@@ -220,3 +254,18 @@ def plot_polar_stereo(
             # Add a colorbar
             # cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
             # cbar.set_label('Geopotential Height (gpm)')
+
+
+# To Do Doc string
+def plot_split(ax, sample, filled, color='red'):
+    # plot mother vortex
+    x_final, y_final, _ = compute_ellipse(sample.area, sample.ar, sample.theta, sample.loncent, sample.latcent)
+    ax.plot(x_final, y_final, linestyle='-.', color=color, label='Mother vortex')
+
+    # plot daughter vortices
+    for n in [1, 2]:
+        if pd.notnull(sample.get(f'area{n}')):
+            x, y, _ = compute_ellipse(sample[f'area{n}'], sample[f'ar{n}'], sample[f'theta{n}'],
+                                      sample[f'loncent{n}'], sample[f'latcent{n}'])
+            plot_ellipse(ax, x, y, sample[f'loncent{n}'], sample[f'latcent{n}'], filled=filled,
+                         label=f"Split vortex {n}", color=color)
