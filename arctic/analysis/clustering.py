@@ -104,7 +104,6 @@ def elbow_method(X: np.ndarray, k_max: int, **kwargs) -> Tuple[List[float], List
         inertias.append(np.sum(all_sq_dists))
     return distortions, inertias
 
-
 def gap_statistic(X: np.ndarray, k_max: int, n_replicates: int = 20, **kwargs) -> np.ndarray:
     r"""
     Computes the Gap Statistic to determine the optimal number of clusters.

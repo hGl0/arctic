@@ -110,7 +110,7 @@ def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
                           draw_labels=True,
                           color='gray',
                           linestyle='--',
-                          linewidth=0.8)
+                          linewidth=1)
 
         gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
 

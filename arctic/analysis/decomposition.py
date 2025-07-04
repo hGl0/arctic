@@ -123,3 +123,14 @@ def compute_eeof(signal, M=400, n_components=9):
 
     return epcs, eeofs, eigenvalues, full_reconstructed, delay_matrix
 
+
+def autocorrelation(X: np.ndarray) -> float:
+    pass
+
+
+def partial_autocorrelation(X: np.ndarray) -> float:
+    pass
+
+def multivariate_autocorrelation(X, lag=1):
+    X = pd.DataFrame(X)
+    return [X[col].autocorr(lag=lag) for col in X.columns]

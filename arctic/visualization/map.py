@@ -231,9 +231,9 @@ def plot_polar_stereo(
                               draw_labels=True,
                               color='gray',
                               linestyle='--',
-                              linewidth=0.8)
+                              linewidth=1)
 
-            gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
+            gl.xlocator = mticker.FixedLocator(np .arange(-180, 181, 45))
             # gl.ylocator = mticker.FixedLocator(np.arange(40, 91, 10))
 
             # plot_ellipse(ax, x_final, y_final, loncent, latcent, filled=filled)

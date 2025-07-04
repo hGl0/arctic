@@ -35,15 +35,3 @@ def within_cluster_dispersion(X: np.ndarray, labels: np.ndarray, **kwargs) -> fl
             D_m = np.sum(pdist(cluster_points, metric='sqeuclidean'))  # euclidean used in comparative gap statistic
             Wk += D_m / (2 * n_m)
     return Wk
-
-
-def autocorrelation(X: np.ndarray) -> float:
-    pass
-
-
-def partial_autocorrelation(X: np.ndarray) -> float:
-    pass
-
-def multivariate_autocorrelation(X, lag=1):
-    X = pd.DataFrame(X)
-    return [X[col].autocorr(lag=lag) for col in X.columns]
