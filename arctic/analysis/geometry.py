@@ -27,6 +27,15 @@ def compute_ellipse(area: float, ar: float, theta: float, loncent: float, latcen
     :return: Triple containing the projected x and y coordinates (in meters) of the rotated ellipse and projection.
     :rtype: tuple of np.ndarray
     """
+    if area <= 0:
+        raise ValueError("Area must be a positive number.")
+    if not isinstance(area, (int, float)):
+        raise TypeError("Area must be a positive number.")
+    if ar <= 0:
+        raise ValueError("Aspect ratio must be a positive number.")
+    if not isinstance(ar, (int, float)):
+        raise TypeError("Aspect ratio must be a positive number.")
+
     # Calculate semi-major (a) and semi-minor (b) axes
     b = np.sqrt(area / (np.pi * ar))  # Minor axis length [km]
     a = ar * b  # Major axis length [km]

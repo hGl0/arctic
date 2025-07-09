@@ -1,0 +1,31 @@
+INFO     numexpr.utils:utils.py:148 Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+INFO     numexpr.utils:utils.py:160 NumExpr defaulting to 8 threads.
+INFO     test_clustering:test_clustering.py:27 Gap statistic optimal k: 3 
+Gap statistic:
+ [[-0.1744096   0.03604852]
+ [ 0.80508067  0.05177674]
+ [ 2.48445751  0.05032956]
+ [ 2.36661145  0.05132317]
+ [ 2.24143889  0.04410152]
+ [ 2.17699229  0.04619989]
+ [ 2.12490609  0.03682683]
+ [ 2.06127426  0.04664487]
+ [ 2.03310638  0.05329971]
+ [ 2.03553551  0.04406672]]
+INFO     test_clustering:test_clustering.py:47 Elbow method:
+ ([131.12749071544278, 43.44986988317105, 4.56679589532219, 4.364538054182495, 4.171660996293355, 4.0267301668119275, 3.9300078931472306, 3.795823901953465, 3.6476797443699502, 3.469153047328561], [26225.498143088553, 8689.97397663421, 913.3591790644379, 872.9076108364991, 834.3321992586709, 805.3460333623855, 786.0015786294462, 759.1647803906931, 729.53594887399, 693.8306094657122])
+INFO     test_clustering:test_clustering.py:68 Silhouette method optimal k: 3
+INFO     test_clustering:test_clustering.py:69 Silhouette method:
+ [0.6909291786657582, 0.7540721514759704, 0.5973381178563193, 0.45972670655164116, 0.24992616757400798, 0.19374237888367354, 0.1701512726696685, 0.11234766115733182, 0.11113444801110886]
+INFO     test_sampling:test_sampling.py:22 Minimum in sample:
+A     1
+B    10
+dtype: int64
+INFO     test_sampling:test_sampling.py:23 Minimum in HPPP:
+[ 1.17352803 15.21685748]
+INFO     test_sampling:test_sampling.py:24 Maximum in sample:
+A     4
+B    40
+dtype: int64
+INFO     test_sampling:test_sampling.py:25 Maximum in HPPP:
+[ 3.98472347 39.0730789 ]

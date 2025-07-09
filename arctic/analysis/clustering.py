@@ -78,6 +78,12 @@ def elbow_method(X: np.ndarray, k_max: int, **kwargs) -> Tuple[List[float], List
     model = kwargs.get('model', AgglomerativeClustering(linkage='complete'))
     verbose = kwargs.get('verbose', False)
 
+    if k_max <= 0:
+        raise ValueError(f"Maximum number of clusters to consider should be a positive integer, got {k_max} instead")
+    if not isinstance(X, np.ndarray):
+        raise TypeError(f"X must be a NumPy ndarray. Got {type(X)}")
+
+
     # check if model is fitted, does not support n_clusters or fit_predict
     check_unfitted_model(model)
 

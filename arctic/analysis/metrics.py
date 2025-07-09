@@ -18,6 +18,13 @@ def within_cluster_dispersion(X: np.ndarray, labels: np.ndarray, **kwargs) -> fl
     :return: float representing within-cluster dispersion value.
     :rtype: float
     """
+    if not isinstance(X, (np.ndarray, pd.DataFrame)):
+        raise TypeError(f"X must be a NumPy array or pandas DataFrame, got {type(X)}")
+    if not isinstance(labels, (np.ndarray, pd.Series)):
+        raise TypeError(f"labels must be a NumPy array or pandas Series, got {type(labels)}")
+
+    X = np.asarray(X)
+    labels = np.asarray(labels)
 
     # check dimensions
     if len(X) != len(labels):

@@ -35,6 +35,9 @@ def compute_pca(df: pd.DataFrame, n_comp: int = 4, **kwargs) -> Tuple[np.ndarray
     scaler = kwargs.get('scaler', StandardScaler)
     savecsv = kwargs.get('savecsv', None)
 
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input data must be a Pandas DataFrame.")
+
     if 'label' in df.columns:
         data = df.drop('label', axis=1)
     else:
