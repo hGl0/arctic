@@ -179,7 +179,7 @@ def plot_pca(pca: Any, x_reduced: np.ndarray,
             plt.grid()
             plt.title('3D Biplot')
         else:
-            warnings.warn(f"Warning: Unknown plot type '{plot_type}'")
+            warnings.warn(UserWarning(f"Warning: Unknown plot type '{plot_type}'"))
 
         # save figure
         if savefig:

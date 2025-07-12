@@ -14,6 +14,9 @@ def no_white_space(df: pd.DataFrame, sep: str = ' ') -> pd.DataFrame:
 
     :return: None (modifies df in-place)
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"df must be a DataFrame, but {type(df)} was given.")
+
     col = []
     for c in df.columns:
         col.append(c.split(sep)[-1])

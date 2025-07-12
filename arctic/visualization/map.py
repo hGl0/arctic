@@ -84,7 +84,9 @@ def plot_polar_stereo(
         plot_polar_stereo(df, savefig=savefig, figsize=figsize)
 
     elif mode == "animate":
-        assert time_col is not None, "time_col required for animation mode"
+        if time_col is None:
+            raise ValueError("time_col required for animation mode")
+        validate_columns(df, [time_col])
         # To Do: adjust for split event
         create_animation(df, time_col, filled, savefig, figsize=figsize)
 
@@ -102,7 +104,7 @@ def plot_polar_stereo(
             df = df.reset_index(drop=True)
             time_col = None
 
-        groups = np.array_split(df, count)
+        groups = [df.loc[idx] for idx in np.array_split(df.index, count)]
         fig, axs = plt.subplots(nrows, ncols, figsize=(5 * ncols, 5 * nrows),
                                 subplot_kw={'projection': ccrs.NorthPolarStereo()})
         axs = axs.flatten()
@@ -149,10 +151,13 @@ def plot_polar_stereo(
             fig.delaxes(axs[j])
 
         plt.tight_layout()
+        if savefig:
+            check_path(savefig)
+            plt.savefig(savefig)
         plt.show()
 
     elif mode == "overlay":
-        original_cmap = cm.get_cmap(cmap)
+        original_cmap = plt.colormaps.get_cmap(cmap)
         trimmed_colors = original_cmap(np.linspace(0, max_brightness, 256))
         muted_cmap = ListedColormap(trimmed_colors)
 
@@ -206,6 +211,9 @@ def plot_polar_stereo(
         ax.legend(unique.values(), unique.keys(), loc='upper left')
 
         fig.autofmt_xdate(rotation=45)
+        if savefig:
+            check_path(savefig)
+            plt.savefig(savefig)
         plt.show()
 
     else:
@@ -242,6 +250,7 @@ def plot_polar_stereo(
             fig.autofmt_xdate(rotation=45)
             if savefig:
                 check_path(savefig)
+                plt.savefig(savefig)
             plt.show()
 
             # Plot data as filled contours, show changing gph as shades of grey

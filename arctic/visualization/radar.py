@@ -32,19 +32,21 @@ def plot_radar(df: pd.DataFrame, label: str = 'label', **kwargs) -> None:
     agg_func = kwargs.get('agg_func', 'mean')  # aggregation function used with groupby
     scaler = kwargs.get('scaler', StandardScaler)
 
+    if label not in df.columns:
+        raise KeyError("Please give a valid label or ensure that your Pandas DataFrame contains a column named 'label'.")
+
+    if not all(pd.api.types.is_numeric_dtype(dtype) for dtype in df.drop('label', axis=1).dtypes):
+        raise TypeError("Ensure your dataframe has only numeric types (except the label column).")
+
     # set n_features to the amount of given features by list
-    n_features, features = feature_consistence(n_features, features, df.drop('label', axis=1))
+    n_features, features = feature_consistence(df.drop('label', axis=1),
+                                               n_features=n_features,
+                                               features=features)
 
     # group and aggregate dataframe
-    try:
-        # check for custom aggregation function
-        grouped = df.groupby(label)
-        val = apply_aggregation(grouped, agg_func)
-    except KeyError as e:
-        raise KeyError(
-            "Please give a valid label or ensure that your Pandas DataFrame contains a column named 'label'.")
-    except Exception as e:
-        print(f"Unexpected exception while aggregation: {e}")
+    # check for custom aggregation function
+    grouped = df.groupby(label)
+    val = apply_aggregation(grouped, agg_func)
 
     group = val.index.tolist()
 
@@ -52,7 +54,13 @@ def plot_radar(df: pd.DataFrame, label: str = 'label', **kwargs) -> None:
     try:
         if isinstance(scaler, type):
             scaler = scaler()
-        val_scaled = pd.DataFrame(scaler.fit_transform(val), columns=val.columns)
+            val_scaled = pd.DataFrame(
+                scaler.fit_transform(val),
+                columns=val.columns,
+                index=val.index  # <- preserve group labels like 'A', 'B'
+            )
+        else:
+            val_scaled = val
     except TypeError as e:
         raise TypeError('Ensure your dataframe has only numeric types.')
     except Exception as e:

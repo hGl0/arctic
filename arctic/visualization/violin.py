@@ -32,7 +32,14 @@ def plot_violin(df: pd.DataFrame, label: str = 'label', **kwargs) -> None:
     spacing = kwargs.get('spacing', 0.3)
     savefig = kwargs.get('savefig', None)  # location to save figure
 
-    n_features, features = feature_consistence(n_features, features, df.drop('label', axis=1))
+    if label not in df.columns:
+        raise KeyError(
+            "Please give a valid label or ensure that your Pandas DataFrame contains a column named 'label'.")
+
+    if not all(pd.api.types.is_numeric_dtype(dtype) for dtype in df.drop('label', axis=1).dtypes):
+        raise TypeError("Ensure your dataframe has only numeric types (except the label column).")
+
+    n_features, features = feature_consistence(df.drop('label', axis=1), n_features, features)
 
     # Scale features for nicer look
     try:

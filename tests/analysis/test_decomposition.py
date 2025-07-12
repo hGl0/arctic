@@ -56,10 +56,6 @@ def test_compute_pca_invalid(sample_df):
     with pytest.raises(TypeError, match="Input data must"):
         compute_pca("not a DataFrame")
 
-
-
-
-
 def test_compute_eeof():
     signal = 1.5*np.sin(np.linspace(0, 4*np.pi, 500)) + np.random.rand(500)
     epcs, eeofs, eigenvalues, reconstructed, delay = compute_eeof(signal, M=100, n_components=5)

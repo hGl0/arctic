@@ -73,7 +73,7 @@ def compute_pca(df: pd.DataFrame, n_comp: int = 4, **kwargs) -> Tuple[np.ndarray
     #              n_arrows=n_arrows)
 
     if n_comp > pca.components_.shape[1]:
-        warnings.warn(f'Less components than given. Reset n_comp to {pca.components_.shape[1]}')
+        warnings.warn(UserWarning(f'Less components than given. Reset n_comp to {pca.components_.shape[1]}'))
         n_comp = pca.components_.shape[1]
 
     # generate overview of influence of each features on each principal component

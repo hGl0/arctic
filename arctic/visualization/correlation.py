@@ -31,7 +31,7 @@ def plot_correlation(df: pd.DataFrame,
         raise TypeError("Expected input 'df' to be a Pandas DataFrame")
 
     if df.empty:
-        warnings.warn("The provided Dataframe is empty. Returning None.")
+        warnings.warn("The provided DataFrame is empty. Returning None.")
         return None
 
     if not isinstance(cmap, str) or cmap not in plt.colormaps():
@@ -44,35 +44,35 @@ def plot_correlation(df: pd.DataFrame,
             styled_matrix = correlation_matrix.style.background_gradient(cmap=cmap, vmin=-1, vmax=1.0)
         except AttributeError as e:
             raise AttributeError(f"Attribute Error {e}: Expected 'df' to be a Pandas DataFrame")
-
-        if savefig:
-            # validate save_path
-            check_path(savefig)
-
-            fig, ax = plt.subplots(figsize=(15, 15))
-
-            ax.matshow(correlation_matrix, cmap=cmap, vmin=-1, vmax=1.0)
-
-            ticks = np.arange(len(correlation_matrix.columns))
-            ax.set_xticks(ticks)
-            ax.set_yticks(ticks)
-            ax.set_xticklabels(correlation_matrix.columns, rotation=90)
-            ax.set_yticklabels(correlation_matrix.columns)
-
-            for i in range(len(correlation_matrix.columns)):
-                for j in range(len(correlation_matrix.columns)):
-                    ax.text(j, i, f"{correlation_matrix.iloc[i, j]:.2f}",
-                            ha="center", va="center")
-
-            ax.set_title("Correlation Matrix", pad=20)
-
-            plt.savefig(savefig, bbox_inches='tight', dpi=300)
-            plt.close()
-
-        if savecsv:
-            check_path(savecsv)
-            correlation_matrix.to_csv(savecsv)
-
-        return styled_matrix
     except Exception as e:
         raise Exception(f"An error occurred while generating the correlation matrix: {e}")
+
+    if savefig:
+        # validate save_path
+        check_path(savefig)
+
+        fig, ax = plt.subplots(figsize=(15, 15))
+
+        ax.matshow(correlation_matrix, cmap=cmap, vmin=-1, vmax=1.0)
+
+        ticks = np.arange(len(correlation_matrix.columns))
+        ax.set_xticks(ticks)
+        ax.set_yticks(ticks)
+        ax.set_xticklabels(correlation_matrix.columns, rotation=90)
+        ax.set_yticklabels(correlation_matrix.columns)
+
+        for i in range(len(correlation_matrix.columns)):
+            for j in range(len(correlation_matrix.columns)):
+                ax.text(j, i, f"{correlation_matrix.iloc[i, j]:.2f}",
+                        ha="center", va="center")
+
+        ax.set_title("Correlation Matrix", pad=20)
+
+        plt.savefig(savefig, bbox_inches='tight', dpi=300)
+        plt.close()
+
+    if savecsv:
+        check_path(savecsv)
+        correlation_matrix.to_csv(savecsv)
+
+    return styled_matrix

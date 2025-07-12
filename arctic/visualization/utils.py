@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,15 +17,16 @@ from arctic.analysis.decomposition import compute_pca
 
 
 
-def feature_consistence(n_features: Optional[int],
-                        features: Optional[List[str]],
-                        df: pd.DataFrame) -> Tuple[int, List[str]]:
+def feature_consistence(df: pd.DataFrame,
+                        n_features: Optional[int] = None,
+                        features: Optional[List[str]] = [],
+                        ) -> Tuple[int, List[str]]:
     r"""
     Determines the most influential PCA features or uses a given feature list.
 
+    :param df: A pandas DataFrame containing the dataset.
     :param n_features: The number of influential features to select.
     :param features: A list of predefined features (optional).
-    :param df: A pandas DataFrame containing the dataset.
 
     :raises ValueError: If neither `n_features` nor `features` is provided.
     :raises Exception: If the loop exceeds the number of available features in `df`.
@@ -32,25 +35,63 @@ def feature_consistence(n_features: Optional[int],
         - The number of selected features.
         - A list with the feature names
     """
+    # at least one must be given
+    if (features == []) and (n_features is None):
+        raise ValueError("Either 'n_features' or 'features' must be provided.")
+
+    # n_features has valid values
+    if (not n_features is None and
+            ((n_features == 0) or (not isinstance(n_features, int)))):
+        raise ValueError("If 'n_features' is provided, it must be an integer greater than 0.")
 
     if features:
         return len(features), features
 
-    if n_features is None:
-        raise ValueError("Either 'n_features' or 'features' must be provided.")
-
     if n_features == df.shape[1]:
         return n_features, df.columns
 
+    # # if n_features > features: add important pca features until n_features is reached
+    # if (n_features > len(features)) and (len(features) > 0):
+    #     pca_features = (pd.DataFrame(compute_pca(df, plot_type=None,
+    #                                 n_comp=n_features)[1])
+    #                     .drop(['Expl_var', 'Expl_var_ratio'])
+    #                     .idxmax()
+    #                     .reset_index())
+    #     unique_features = pca_features[0].unique()
+    #
+    #     for feat in unique_features:
+    #         if feat not in features:
+    #             features.append(feat)
+    #         if len(features) == n_features:
+    #             return n_features, features
+    #
+    #     # reached when n_features > len(features), but no features could be added
+    #     # example: features = df.columns, n_features = len(df.columns)+1
+    #     warnings.warn(UserWarning(f"Could not add further features to reach {n_features} features."
+    #                               f"Returning {len(features)} features."))
+    #     return len(features), features
+    #
+    # # if n_features < len(features): select most important features from features
+    # if (n_features < len(features)) and (len(features) > 0):
+    #     pca_features = (pd.DataFrame(compute_pca(df[features], plot_type=None,
+    #                                              n_comp=n_features)[1])
+    #                     .drop(['Expl_var', 'Expl_var_ratio'])
+    #                     .idxmax()
+    #                     .reset_index())
+    #     unique_features = pca_features[0].unique()
+    #     return n_features, unique_features
+    #
+
     add_features = 0
     max_attempts = df.shape[1]
-
+    # based on only n_features
     while True:
         if add_features > max_attempts:
             raise Exception(f"Could not select exactly {n_features} unique features from PCA:\n"
                             f"Tried increasing but reached dataset limit.")
-        pca_features = (compute_pca(df, plot_type=None,
-                                    comp=n_features + add_features)
+
+        pca_features = (pd.DataFrame(compute_pca(df, plot_type=None,
+                                    n_comp=n_features + add_features)[1])
                         .drop(['Expl_var', 'Expl_var_ratio'])
                         .idxmax()
                         .reset_index())
@@ -60,6 +101,10 @@ def feature_consistence(n_features: Optional[int],
         if len(unique_features) == n_features:
             return n_features, list(unique_features)
         add_features += 1
+    # n_features > features
+
+
+
 
 def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
                      savegif: Optional[str] = None,
@@ -121,6 +166,7 @@ def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
         ani.save(savegif, dpi=300, writer=animation.PillowWriter(fps=1))
     else:
         plt.show()
+    plt.close()
 
 
 def create_polar_ax(figsize=(10,10)) -> Tuple[plt.Figure, plt.Axes]:
@@ -167,6 +213,22 @@ def plot_ellipse(ax: plt.Axes, x: np.ndarray, y: np.ndarray, loncent: float, lat
 
     :return: None
     """
+    # Coordinate validation
+    if not isinstance(x, (np.ndarray, list)) or not isinstance(y, (np.ndarray, list)):
+        raise TypeError("x and y must be array-like (e.g., np.ndarray or list).")
+
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.shape != y.shape:
+        raise ValueError(f"x and y must have the same shape. Got {x.shape} and {y.shape}.")
+
+    if len(x) == 0:
+        raise ValueError("x and y are empty.")
+
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise ValueError("x and y must not contain NaN or infinite values.")
+
     if filled:
         ax.fill(x, y, color=color, label=label)
     else:

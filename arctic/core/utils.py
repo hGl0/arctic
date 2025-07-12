@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Union
 import pandas as pd
 
@@ -34,6 +35,11 @@ def validate_columns(df: pd.DataFrame, required_cols: List[str]) -> None:
 
     :return: None
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Expected a pd.DataFrame")
+    if len(required_cols) < 1:
+        warnings.warn(UserWarning("At least one required column should be given."))
+
     missing = [col for col in required_cols if col not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
