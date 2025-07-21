@@ -1,6 +1,8 @@
-import numpy as np
+import warnings
 from typing import List, Tuple
 
+import numpy as np
+import pandas as pd
 from sklearn import clone
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
@@ -8,6 +10,7 @@ from sklearn.metrics import silhouette_score
 from arctic.models.validation import check_unfitted_model
 from .metrics import within_cluster_dispersion
 from .sampling import generate_reference_HPPP
+from arctic.core.utils import get_event_ranges
 
 def silhouette_method(X: np.ndarray, k_max: int, **kwargs) -> List[float]:
     r"""
@@ -80,8 +83,8 @@ def elbow_method(X: np.ndarray, k_max: int, **kwargs) -> Tuple[List[float], List
 
     if k_max <= 0:
         raise ValueError(f"Maximum number of clusters to consider should be a positive integer, got {k_max} instead")
-    if not isinstance(X, np.ndarray):
-        raise TypeError(f"X must be a NumPy ndarray. Got {type(X)}")
+    if not isinstance(X, (np.ndarray, pd.Series, pd.DataFrame)):
+        raise TypeError(f"X must be a NumPy ndarray, pandas Series or DataFrame. Got {type(X)}")
 
 
     # check if model is fitted, does not support n_clusters or fit_predict
@@ -174,3 +177,74 @@ def gap_statistic(X: np.ndarray, k_max: int, n_replicates: int = 20, **kwargs) -
         gap_values.append((gap, s_k))
 
     return np.array(gap_values)
+
+def split_displaced_seviour(data: np.ndarray,
+                            ar_col = 'ar',
+                            lat_col = 'latcent',
+                            time_col = 'string',
+                            ar = 2.4,
+                            latcent = 66,
+                            days = 7):
+    r"""
+    Classify each day as 'split', 'displaced', or 'undisturbed' based on thresholds:
+      - Displaced: lat_centroid < 66°N for 7+ consecutive days
+      - Split: aspect_ratio > 2.4 for 7+ consecutive days
+      - Events must be at least 30 days apart (first one counts)
+
+    Default is as suggested by Seviour et al. (2013)
+
+    :param data: Input data with time, aspect ratio, and centroid latitude.
+    :type data: pd.DataFrame or np.ndarray
+    :param ar_col: Column name for aspect ratio.
+    :type ar_col: str
+    :param lat_col: Column name for centroid latitude.
+    :type lat_col: str
+    :param time_col: Column name for time (must be datetime or convertible).
+    :type time_col: str
+    :param ar: Aspect ratio threshold, the aspect ratio has to be greater than 'ar' for at least 'days' days. Default is 2.4.
+    :type ar: float
+    :param latcent: Latitude threshold, the latitude has to be southward of 'latcent' for at least 'days' days. Default is 66.
+    :type latcent: float
+    :param days: Number of days that a threshold has to be fulfilled. Default is 7.
+    :type days: int
+
+    Raises.
+
+    :return: Array of threshold based classifications ("split", "displaced", or "undisturbed").
+    :rtype: np.ndarray
+    """
+    # Convert to DataFrame if necessary
+    if isinstance(data, np.ndarray):
+        warnings.warn(UserWarning(f'np.ndarray expects this order of columns {time_col}, {ar_col}, {lat_col}'))
+        data = pd.DataFrame(data, columns=[time_col, ar_col, lat_col])
+
+    df = data.copy()
+    df[time_col] = pd.to_datetime(df[time_col])
+    df = df.sort_values(by=time_col).reset_index(drop=True)
+
+    n = len(df)
+    labels = np.array(['undisturbed'] * n, dtype=object)
+
+    # Boolean masks
+    ar_mask = data[ar_col] >= ar
+    lat_mask = data[lat_col] >= latcent
+
+    displaced_ranges = get_event_ranges(lat_mask.values, days=days)
+    split_ranges = get_event_ranges(ar_mask.values, days=days)
+
+    # Combine and sort all events by start date
+    all_events = [(start, end, 'displaced') for start, end in displaced_ranges] + \
+                 [(start, end, 'split') for start, end in split_ranges]
+
+    all_events.sort(key=lambda x: df.loc[x[0], time_col])
+
+    # Assign labels, enforcing 30-day spacing between any events
+    last_event_end_time = pd.Timestamp.min
+
+    for start, end, label in all_events:
+        event_start_time = df.loc[start, time_col]
+        if (event_start_time - last_event_end_time).days >= 30:
+            labels[start:end] = label
+            last_event_end_time = df.loc[end - 1, time_col]
+
+    return labels

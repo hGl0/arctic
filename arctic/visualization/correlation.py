@@ -1,9 +1,10 @@
+import warnings
+from typing import Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from pandas.io.formats.style import Styler
-import numpy as np
-import matplotlib.pyplot as plt
-from typing import Optional
-import warnings
 
 from arctic.io.paths import check_path
 

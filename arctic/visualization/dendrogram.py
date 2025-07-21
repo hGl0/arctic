@@ -1,7 +1,7 @@
 from typing import Any
-import numpy as np
-import warnings
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 
 from arctic.io.paths import check_path
@@ -25,14 +25,25 @@ def plot_dendrogram(model: Any,
     """
 
     save_path = kwargs.pop('savefig', None)
+    direction = kwargs.pop('direction', None)
+
 
     # check availability of attributes
     if not all(hasattr(model, attr) for attr in ['children_', 'distances_', 'labels_']):
         raise AttributeError("Model must have 'children_', 'distances_', and 'labels_' attributes.")
 
+    orientation_map = {
+        "TB": "top",
+        "BT": "bottom",
+        "LR": "left",
+        "RL": "right"
+    }
+    orientation = orientation_map.get(direction.upper())
+    # if orientation is None:
+    #     raise ValueError(f"Invalid direction '{direction}'. Choose from: {list(orientation_map.keys())}")
+
     # Create linkage matrix and then plot the dendrogram
     # create the counts of samples under each node
-    # try:
     counts = np.zeros(model.children_.shape[0])
     n_samples = len(model.labels_)
 
@@ -50,20 +61,13 @@ def plot_dendrogram(model: Any,
     ).astype(float)
 
     # Plot the corresponding dendrogram
-    dendrogram(linkage_matrix, **kwargs)
+    if direction is not None:
+        dendrogram(linkage_matrix, orientation=orientation, **kwargs)
+    else:
+        dendrogram(linkage_matrix, **kwargs)
 
     # save the dendrogram
     if save_path:
         # Validate savefig
         check_path(save_path)
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
-
-    # # Catch errors
-    # except AttributeError as e:
-    #     raise AttributeError(f"Model is missing required attributes: {e}")
-    # except TypeError as e:
-    #     warnings.warn(f"TypeError: {e}.\n Ensure 'children_' and 'distances_' are of correct type.")
-    # except FileNotFoundError as e:
-    #     raise e
-    # except Exception as e:
-    #     warnings.warn(f"Unexpected error: {e}")

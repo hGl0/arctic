@@ -1,5 +1,6 @@
-import pandas as pd
 from typing import Union, Callable
+
+import pandas as pd
 
 
 def apply_aggregation(df: pd.DataFrame, agg_func: Union[str, Callable]) -> Union[pd.DataFrame, pd.Series]:

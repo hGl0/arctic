@@ -1,11 +1,11 @@
 import warnings
+from typing import Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from typing import Tuple
 
 # from arctic.visualization.pca import plot_pca
 from arctic.io.paths import check_path
@@ -114,7 +114,7 @@ def compute_eeof(signal, M=400, n_components=9):
     pca = PCA(n_components=n_components)
     epcs = pca.fit_transform(delay_matrix)
     eeofs = pca.components_
-    eigenvalues = pca.explained_variance_ratio_
+    expl_var_ratio = pca.explained_variance_ratio_
 
     # Reconstruct the signal using the first n_components
     reconstructed = pca.inverse_transform(epcs)
@@ -124,7 +124,7 @@ def compute_eeof(signal, M=400, n_components=9):
     full_reconstructed = np.full((n,M), np.nan)
     full_reconstructed[M - 1:] = reconstructed
 
-    return epcs, eeofs, eigenvalues, full_reconstructed, delay_matrix
+    return epcs, eeofs, expl_var_ratio, full_reconstructed, delay_matrix
 
 
 def autocorrelation(X: np.ndarray) -> float:

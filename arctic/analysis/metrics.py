@@ -1,7 +1,7 @@
+import warnings
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
-from statsmodels.tsa.stattools import acf, pacf
 
 
 def within_cluster_dispersion(X: np.ndarray, labels: np.ndarray, **kwargs) -> float:

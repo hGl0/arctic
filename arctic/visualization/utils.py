@@ -1,20 +1,15 @@
-import warnings
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib import animation
-import matplotlib.ticker as mticker
+from typing import List, Tuple, Optional
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import numpy as np
+import pandas as pd
+from matplotlib import animation
 
-from typing import List, Tuple, Optional
-
-from arctic.analysis.geometry import compute_ellipse
 from arctic.analysis.decomposition import compute_pca
-
-
+from arctic.analysis.geometry import compute_ellipse
 
 
 def feature_consistence(df: pd.DataFrame,

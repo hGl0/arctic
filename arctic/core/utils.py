@@ -1,5 +1,6 @@
 import warnings
 from typing import List, Union
+
 import pandas as pd
 
 
@@ -43,3 +44,22 @@ def validate_columns(df: pd.DataFrame, required_cols: List[str]) -> None:
     missing = [col for col in required_cols if col not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
+
+
+    # Build candidate event ranges
+def get_event_ranges(flag_array, days=7):
+    ranges = []
+    i = 0
+    while i <= len(flag_array) - days:
+        if flag_array[i]:
+            j = i
+            while j < len(flag_array) and flag_array[j]:
+                j += 1
+            if j - i >= days:
+                ranges.append((i, j))  # (start_idx, end_idx)
+                i = j  # Skip ahead
+            else:
+                i = j
+        else:
+            i += 1
+    return ranges

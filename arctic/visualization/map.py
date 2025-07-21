@@ -1,22 +1,21 @@
-import pandas as pd
-import numpy as np
 import math
-import matplotlib.colors as mcolors
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
-from matplotlib.colors import ListedColormap
+from typing import Union
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import numpy as np
+import pandas as pd
+from matplotlib.colors import ListedColormap
 
-from arctic.io.paths import check_path
-from arctic.analysis.geometry import compute_ellipse
 from arctic.analysis.aggregator import apply_aggregation
-from arctic.visualization.utils import create_polar_ax, plot_ellipse, create_animation
+from arctic.analysis.geometry import compute_ellipse
 from arctic.core.utils import norm_series_df, validate_columns
-
-from typing import Union
+from arctic.io.paths import check_path
+from arctic.visualization.utils import create_polar_ax, plot_ellipse, create_animation
 
 
 def plot_polar_stereo(
