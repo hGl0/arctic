@@ -184,7 +184,8 @@ def split_displaced_seviour(data: np.ndarray,
                             time_col = 'string',
                             ar = 2.4,
                             latcent = 66,
-                            days = 7):
+                            days = 7,
+                            **kwargs):
     r"""
     Classify each day as 'split', 'displaced', or 'undisturbed' based on thresholds:
       - Displaced: lat_centroid < 66°N for 7+ consecutive days
@@ -213,6 +214,10 @@ def split_displaced_seviour(data: np.ndarray,
     :return: Array of threshold based classifications ("split", "displaced", or "undisturbed").
     :rtype: np.ndarray
     """
+    mark = kwargs.get('mark', 'all')
+    if not mark in ['all', 'first', 'last']:
+        raise AttributeError(f"'mark' must be one of 'all', 'first', 'last', got {mark}.")
+
     # Convert to DataFrame if necessary
     if isinstance(data, np.ndarray):
         warnings.warn(UserWarning(f'np.ndarray expects this order of columns {time_col}, {ar_col}, {lat_col}'))
@@ -227,7 +232,7 @@ def split_displaced_seviour(data: np.ndarray,
 
     # Boolean masks
     ar_mask = data[ar_col] >= ar
-    lat_mask = data[lat_col] >= latcent
+    lat_mask = data[lat_col] <= latcent
 
     displaced_ranges = get_event_ranges(lat_mask.values, days=days)
     split_ranges = get_event_ranges(ar_mask.values, days=days)
@@ -244,7 +249,12 @@ def split_displaced_seviour(data: np.ndarray,
     for start, end, label in all_events:
         event_start_time = df.loc[start, time_col]
         if (event_start_time - last_event_end_time).days >= 30:
-            labels[start:end] = label
+            if mark == 'first':
+                labels[start] = label
+            elif mark == 'last':
+                labels[end] = label
+            else:
+                labels[start:end] = label
             last_event_end_time = df.loc[end - 1, time_col]
 
     return labels

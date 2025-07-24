@@ -150,8 +150,6 @@ def plot_eeof(epc, eeof, expl_var_ratio, savefig=None):
     plt.show()
 
 
-
-
 def plot_hist_per_class(df, feat_k, y, savefig=None):
     # for idx, feat_k in enumerate(features_kopt):
     var = y
@@ -212,33 +210,71 @@ def plot_hist_per_class(df, feat_k, y, savefig=None):
 def compare_cluster(df,
                     compare_col,
                     y_names=['y_ar_latcent', 'y_ar_latcent_scArea', 'y_ar_latcent_filteredArea', 'y_ar_latcent_u'],
-                    value_col='string'):
+                    value_col='string',
+                    pred_value='S',
+                    gt_value='S',
+                    verbose=True):
+    r"""
+    Compare a cluster classification column with multiple threshold-based ground truth columns.
+
+    :param df: Pandas DataFrame with entire data
+    :type df: Pandas DataFrame
+    :param compare_col: String or integer of the column that should be compared.
+    :type compare_col: str
+    :param y_names: List of Strings with all column names that should be compared to ´compare_col´
+    :type y_names: List[String]
+    :param value_col: String or integer of column that should be counted
+    :type value_col: str
+    :param pred_value: String or integer of predicted value
+    :type pred_value: str
+    :param gt_value: String or integer of ground truth value
+    :type gt_value: str
+    :param verbose: Boolean whether to print information about accuracy, recall, precision and f1 score.
+    :type verbose: bool
+
+    :return: None
+    """
+
     if not compare_col in df.columns:
-        raise KeyError(f"Column {compare_col} not found in dataframe columns.")
+        raise KeyError(f"Compare column {compare_col} not found in dataframe columns.")
+    if not value_col in df.columns:
+        raise KeyError(f"Value column {value_col} not found in dataframe columns.")
+
     for y in y_names:
-        if 'Area' in y:
-            other = 'L'
-        else:
-            other = 'D'
-        print(f'----------------------------------------------\nPercentages for form and {y}')
+        if y not in df.columns:
+            raise KeyError(f"Prediction column {y} not found in dataframe.")
+
+        y_vals = df[y].dropna().unique()
+        gt_vals = df[compare_col].dropna().unique()
+
+        if not pred_value in y_vals:
+            raise ValueError(f"{pred_value} is not a found value in the given class column {y}."
+                             f"Found {y_vals} instead.")
+        if not gt_value in gt_vals:
+            raise ValueError(f"{gt_value} is not a found value in the given class column {y}."
+                             f"Found {gt_vals} instead.")
+        print(f'----------------------------------------------')
+        print(f'Comparison of Percentages:  {y} (predicted: {pred_value}) vs {compare_col} (ground truth: {gt_value})')
         table = pd.pivot_table(
             data=df[[y, value_col, compare_col]],
             values=value_col,
             index=compare_col,
             columns=y,
             aggfunc='count', margins=True).fillna(0)
-        print(table/df.shape[0]*100)
+        print(np.round(table / df.shape[0] * 100, 2))
 
-        tp = table.iloc[1]['S']  # clustered as split and computed as split
-        fp = table.iloc[0]['S']  # clustered as split, but computed as not split
-        tn = table.iloc[0]['U'] + table.iloc[0][other]  # clustered as not split and computed as not split
-        fn = table.iloc[1]['U'] + table.iloc[1][other]  # clustered as not split, but computed as split
+        tp = ((df[y] == pred_value) & (df[compare_col] == gt_value)).sum()
+        fp = ((df[y] == pred_value) & (df[compare_col] != gt_value)).sum()
+        fn = ((df[y] != pred_value) & (df[compare_col] == gt_value)).sum()
+        tn = ((df[y] != pred_value) & (df[compare_col] != gt_value)).sum()
+
         acc = (tn + tp) / (tp + fp + tn + fn)
         precision = tp / (tp + fp)
         recall = tp / (tp + fn)
         f1 = 2 * precision * recall / (precision + recall)
 
-        print(f"Accuracy: {np.round(acc, 2)}\n"
-              f"Precision: {np.round(precision, 2)}\n"
-              f"Recall: {np.round(recall, 2)}\n"
-              f"F1 Score: {np.round(f1, 2)}")
+        if verbose:
+            print(f"Accuracy: {np.round(acc, 2)}\n"
+                  f"Precision: {np.round(precision, 2)}\n"
+                  f"Recall: {np.round(recall, 2)}\n"
+                  f"F1 Score: {np.round(f1, 2)}")
