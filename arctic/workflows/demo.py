@@ -226,9 +226,9 @@ def compare_cluster(df,
     :param value_col: String or integer of column that should be counted
     :type value_col: str
     :param pred_value: String or integer of predicted value
-    :type pred_value: str
+    :type pred_value: str or integer
     :param gt_value: String or integer of ground truth value
-    :type gt_value: str
+    :type gt_value: str or integer
     :param verbose: Boolean whether to print information about accuracy, recall, precision and f1 score.
     :type verbose: bool
 
