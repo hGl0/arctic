@@ -71,7 +71,11 @@ def plot_timeseries_moments(df, columns, labels,
                             positions=None, vertical_line=None,
                             title=None, savefig=None,
                             num_plots=2, figsize=(10, 5)):
-    fig, axes = plt.subplots(num_plots, figsize=figsize)
+    if figsize:
+        fig, axes = plt.subplots(num_plots, figsize=figsize)
+    else:
+        fig, axes = plt.subplots(num_plots, figsize=(10, 2.5*num_plots))
+
     if num_plots > 1:
         axes[0].set_title(title)
     else:

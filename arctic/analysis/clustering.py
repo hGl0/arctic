@@ -208,6 +208,7 @@ def split_displaced_seviour(data: np.ndarray,
     :type latcent: float
     :param days: Number of days that a threshold has to be fulfilled. Default is 7.
     :type days: int
+    :param kwargs: *mark* which event should be marked: all, first, last
 
     Raises.
 
@@ -243,12 +244,17 @@ def split_displaced_seviour(data: np.ndarray,
 
     all_events.sort(key=lambda x: df.loc[x[0], time_col])
 
+
     # Assign labels, enforcing 30-day spacing between any events
-    last_event_end_time = pd.Timestamp.min
+    # might lead to overflow error!
+    # last_event_end_time = pd.Timestamp.min
+    last_event_end_time = None
+    # last_event_end_time = df[time_col].min() - pd.Timedelta(days=31)
 
     for start, end, label in all_events:
         event_start_time = df.loc[start, time_col]
-        if (event_start_time - last_event_end_time).days >= 30:
+
+        if last_event_end_time is None or (event_start_time - last_event_end_time).days >= 30:
             if mark == 'first':
                 labels[start] = label
             elif mark == 'last':
