@@ -11,7 +11,12 @@ Arctic is a python package to analyse and cluster climate data. It has a special
 
 ## Installation <a name="installation"></a>
 
-`pip install arctic`
+Local installation: `pip install .` <br>
+From GitHub: `pip install git+https://github.com/hGl0/arctic@main`
+
+Not available yet: `pip install vortexclust`
+
+[To Do] snippets to get started: import, load demo csv, cluster plot or function
 
 
 ## Usage <a name="usage"></a>

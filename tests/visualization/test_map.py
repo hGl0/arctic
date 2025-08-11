@@ -4,7 +4,7 @@ import pandas as pd
 from unittest.mock import patch
 import matplotlib.pyplot as plt
 
-from arctic.visualization.map import plot_polar_stereo
+from vortexclust.visualization.map import plot_polar_stereo
 
 logger = logging.getLogger(__name__)
 

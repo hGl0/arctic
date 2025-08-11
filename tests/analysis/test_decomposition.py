@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
-from arctic.analysis import *
+from vortexclust.analysis import *
 
 logger = logging.getLogger(__name__)
 

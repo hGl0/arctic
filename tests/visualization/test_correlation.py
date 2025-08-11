@@ -1,7 +1,7 @@
 import logging
 import pytest
 
-from arctic.visualization.correlation import *
+from vortexclust.visualization.correlation import *
 
 logger = logging.getLogger(__name__)
 

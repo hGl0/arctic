@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from arctic.core.utils import *
+from vortexclust.core.utils import *
 
 logger = logging.getLogger(__name__)
 

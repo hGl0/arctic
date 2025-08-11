@@ -3,7 +3,7 @@ import pytest
 from sklearn.cluster import KMeans
 from sklearn.base import BaseEstimator
 
-from arctic.models.validation import *
+from vortexclust.models.validation import *
 
 logger = logging.getLogger(__name__)
 

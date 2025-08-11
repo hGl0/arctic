@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.datasets import make_blobs
 import pytest
 
-from arctic.analysis import *
+from vortexclust.analysis import *
 
 logger = logging.getLogger(__name__)
 

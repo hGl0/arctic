@@ -1,6 +1,6 @@
 # Data files, until go to release data
 data/
-arctic/__pycache__
+vortexclust/__pycache__
 
 # Default ignored files
 /shelf/

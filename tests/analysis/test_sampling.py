@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 import numpy as np
 
-from arctic.analysis.sampling import generate_reference_HPPP
+from vortexclust.analysis.sampling import generate_reference_HPPP
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from arctic.visualization.utils import feature_consistence, create_animation, create_polar_ax, plot_ellipse
+from vortexclust.visualization.utils import feature_consistence, create_animation, create_polar_ax, plot_ellipse
 
 logger = logging.getLogger(__name__)
 

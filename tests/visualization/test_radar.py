@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from arctic.visualization.radar import plot_radar
+from vortexclust.visualization.radar import plot_radar
 
 logger = logging.getLogger(__name__)
 

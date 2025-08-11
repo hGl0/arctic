@@ -6,8 +6,8 @@ from unittest.mock import patch
 import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
-from arctic.visualization.pca import plot_pca
-from arctic.analysis import compute_pca
+from vortexclust.visualization.pca import plot_pca
+from vortexclust.analysis import compute_pca
 
 logger = logging.getLogger(__name__)
 

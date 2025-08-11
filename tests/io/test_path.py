@@ -1,7 +1,7 @@
 import logging
 import pytest
 
-from arctic.io.paths import *
+from vortexclust.io.paths import *
 
 logger = logging.getLogger(__name__)
 

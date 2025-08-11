@@ -2,7 +2,7 @@ import logging
 import pyproj
 import pytest
 import numpy as np
-from arctic.analysis.geometry import compute_ellipse
+from vortexclust.analysis.geometry import compute_ellipse
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ import logging
 import pytest
 import numpy as np
 
-from arctic.analysis import *
+from vortexclust.analysis import *
 
 logger = logging.getLogger(__name__)
 

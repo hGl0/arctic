@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from arctic.io.cleaner import *
+from vortexclust.io.cleaner import *
 
 logger = logging.getLogger(__name__)
 

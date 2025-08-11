@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 import pytest
 
-from arctic.analysis.aggregator import apply_aggregation
+from vortexclust.analysis.aggregator import apply_aggregation
 
 logger = logging.getLogger(__name__)
 

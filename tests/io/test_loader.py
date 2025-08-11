@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 import pytest
 
-from arctic.io.loader import *
+from vortexclust.io.loader import *
 
 logger = logging.getLogger(__name__)
 

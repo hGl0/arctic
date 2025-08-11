@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from sklearn.cluster import AgglomerativeClustering, KMeans
 
-import arctic
+import vortexclust
 
 def set_up_logging(log_dir='logs'):
     os.makedirs(log_dir, exist_ok=True)
@@ -16,17 +16,17 @@ def set_up_logging(log_dir='logs'):
     logging.basicConfig(filename=log_file, level=logging.INFO, format="%(asctime)s - %(message)s")
     return log_file
 
-import arctic.io.loader
-import arctic.io.cleaner
+import vortexclust.io.loader
+import vortexclust.io.cleaner
 from sklearn.preprocessing import LabelEncoder
 def load_and_clean_data(filepath):
 
-    df = arctic.io.loader.read_data(str(filepath))
-    arctic.io.cleaner.no_white_space(df)
+    df = vortexclust.io.loader.read_data(str(filepath))
+    vortexclust.io.cleaner.no_white_space(df)
     # time_col = input("Are there any time columns that should be converted to datetime?: ")
     time_col = 'string'
     time_format = '%d.%m.%Y-%H:%M:%S'
-    arctic.io.cleaner.to_date(df, time_col, time_format)
+    vortexclust.io.cleaner.to_date(df, time_col, time_format)
 
     # encode non-numeric columns
     le = LabelEncoder()
@@ -95,14 +95,14 @@ def filter_data(df, features, filter, output_path):
     # return filtered
 
 def run_pca(df, output_path):
-    x_new, scores, pca = arctic.compute_pca(df, n_comp=2)
-    arctic.plot_pca(pca, x_new, output_path)
+    x_new, scores, pca = vortexclust.compute_pca(df, n_comp=2)
+    vortexclust.plot_pca(pca, x_new, output_path)
     logging.info(f"PCA computed and ploted.")
 
 
 def detect_opt_clusters(data, method, output_path, max_k):
     if method == 'gap statistic':
-        result = arctic.gap_statistic(data, max_k=max_k)
+        result = vortexclust.gap_statistic(data, max_k=max_k)
 
     plt.plot(np.arange(len(result)), result[0])
     plt.savefig(output_path)
@@ -131,7 +131,7 @@ def cluster_distribution(df, model_name, features, output_path, n_clusters=None)
 
 def main():
     """Parse arguments and call processing function."""
-    parser = argparse.ArgumentParser(description="Process a CSV file using arctic.")
+    parser = argparse.ArgumentParser(description="Process a CSV file using vortexclust.")
     parser.add_argument("input", type=str, help="Path to input CSV file")
     parser.add_argument("output_path", type=str, help="Path to the directory, where the processed output should be saved")
     parser.add_argument("model", type=str, nargs='?',

@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import RobustScaler
 
-from arctic.visualization.violin import plot_violin
+from vortexclust.visualization.violin import plot_violin
 
 logger = logging.getLogger(__name__)
 

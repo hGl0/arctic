@@ -3,8 +3,8 @@ import logging
 import pandas as pd
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QComboBox, QPushButton,
-    QFileDialog, QListWidget, QListWidgetItem, QMessageBox, QCheckBox,
-    QHBoxLayout, QLineEdit, QCalendarWidget
+    QListWidget, QListWidgetItem, QMessageBox, QCheckBox,
+    QHBoxLayout, QLineEdit
 )
 from PyQt6.QtCore import Qt
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
@@ -13,7 +13,7 @@ from datetime import datetime
 
 from filter_window import FilterWindow
 
-from arctic.io.cleaner import to_date
+from vortexclust.io.cleaner import to_date
 
 def select_scaler(name):
     if name == 'StandardScaler': return StandardScaler()

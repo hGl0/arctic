@@ -5,7 +5,7 @@ from unittest.mock import patch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from arctic.visualization.dendrogram import plot_dendrogram
+from vortexclust.visualization.dendrogram import plot_dendrogram
 
 logger = logging.getLogger(__name__)
 
