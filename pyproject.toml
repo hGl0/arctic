@@ -5,13 +5,25 @@ build-backend="hatchling.build"
 [project]
 name="vortexclust"
 dynamic = ["version"]
+dependencies = [
+    "numpy>1.22,<2.0",
+    "pandas>=1.5,<3.0",
+    "scikit-learn>=1.2,<2.0",
+    "scipy>=1.9,<2.0",
+    "matplotlib>3.6,<4.0",
+    "pyproj>=3.4,<4.0",
+]
+[project.optional-dependencies]
+viz = ["seaborn>=0.12,<0.14",]
+maps = ["cartopy>0.21,<0.23"]
+
 [tool.hatch.version]
 path = "vortexclust/__init__.py"
 authors = [{name="Hanna Gloyna", email="hanna.gloyna@gmx.de"}]
 description = "Python package to cluster and analyse stratospheric polar vortex data with focus on different vortex regimes."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { file = "LICENSE"}
+license = {file = "LICENSE"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -25,8 +37,8 @@ Issues = "https://github.com/hGl0/arctic/issues"
 
 # optional CLI
 [project.scripts]
-vortexclust = "stratvortex.workflows.demo:main"
+vortexclust = "vortexclust.workflows.demo:main"
 
-[tool.hatch.bulid]
-include = ["clustvortex/**"]
+[tool.hatch.build]
+include = ["vortexclust/**"]
 exclude = ["data/**", "doc/**", "output/**", "**/__pycache__/**", "*.eps", "*.sav", "*.log"]

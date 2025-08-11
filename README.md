@@ -10,11 +10,36 @@ Arctic is a python package to analyse and cluster climate data. It has a special
 - [Acknowledgments](#acknowledgments)
 
 ## Installation <a name="installation"></a>
+### Install with pip (Python >= 3.9 required)
 
-Local installation: `pip install .` <br>
-From GitHub: `pip install git+https://github.com/hGl0/arctic@main`
+Core package:<br>
+`pip install vortexclust`
 
-Not available yet: `pip install vortexclust`
+With optional plotting extras:<br>
+Adds seaborn: `pip install vortexclust[viz]`<br>
+Adds cartopy/pyproj (needs system GEOS/PROJ): `pip install vortexclust[maps]`
+
+#### From GitHub
+`pip install git+https://github.com/hGl0/arctic@main`
+
+#### From local source
+```
+git clone https://github.com/hGl0/vortexclust.git
+cd vortexclust<br>
+pip install -e .
+```
+
+### Windows Installation
+It is recommended to install `miniconda` or `anaconda`. This handles all Python dependencies without manual compilation.
+Example:
+```
+conda create -n vortex python=3.11
+conda activate vortex
+pip install vortexclust[viz, maps]
+```
+
+
+
 
 [To Do] snippets to get started: import, load demo csv, cluster plot or function
 
