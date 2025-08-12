@@ -11,4 +11,5 @@ vortexclust/__pycache__
 /dataSources/
 /dataSources.local.xml
 /.ipynb_checkpoints/
+.idea
 /gui/

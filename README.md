@@ -15,9 +15,9 @@
 Core package:<br>
 `pip install vortexclust`
 
-With optional plotting extras:<br>
-Adds seaborn: `pip install vortexclust[viz]`<br>
-Adds cartopy/pyproj (needs system GEOS/PROJ): `pip install vortexclust[maps]`
+With optional dependencies: <br>
+Adds cartopy/pyproj (needs system GEOS/PROJ) and is only required if `vortexclust.visualization.maps` is used to generate a stereographic map plot<br>
+`pip install vortexclust[maps]`
 
 #### From GitHub
 `pip install git+https://github.com/hGl0/vortexclust@main`
