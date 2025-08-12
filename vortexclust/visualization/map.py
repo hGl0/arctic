@@ -264,8 +264,21 @@ def plot_polar_stereo(
             # cbar.set_label('Geopotential Height (gpm)')
 
 
-# To Do Doc string
 def plot_split(ax, sample, filled, color='red'):
+    r"""
+    Plot a split vortex event with mother and daughter ellipses.
+
+    :param ax: Axis on which to draw the ellipses.
+    :type ax: matplotlib.axes.Axes
+    :param sample: Data containing ellipse parameters for the split event.
+    :type sample: pandas.Series or dict-like
+    :param filled: Whether to fill the ellipses.
+    :type filled: bool
+    :param color: Color used for the ellipses, defaults to 'red'.
+    :type color: str, optional
+
+    :return: None
+    """
     # plot mother vortex
     x_final, y_final, _ = compute_ellipse(sample.area, sample.ar, sample.theta, sample.loncent, sample.latcent)
     ax.plot(x_final, y_final, linestyle='-.', color=color, label='Mother vortex')

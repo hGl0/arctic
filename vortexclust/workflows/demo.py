@@ -71,6 +71,36 @@ def plot_timeseries_moments(df, columns, labels,
                             positions=None, vertical_line=None,
                             title=None, savefig=None,
                             num_plots=2, figsize=(10, 5)):
+    r"""
+    Plot multiple time series in paired subplots with optional annotations.
+
+    :param df: DataFrame containing the time series data.
+    :type df: pandas.DataFrame
+    :param columns: List of column names to plot. Must contain an even number of entries.
+    :type columns: list
+    :param labels: Labels for each column.
+    :type labels: list
+    :param time_column: Name of the column containing datetime values, defaults to 'string'.
+    :type time_column: str, optional
+    :param time_format: Format string for displaying dates, defaults to '%m-%y'.
+    :type time_format: str, optional
+    :param time_span: Number of rows to include from the start; -1 uses all rows, defaults to -1.
+    :type time_span: int, optional
+    :param positions: Positions at which vertical markers and top labels are drawn, defaults to None.
+    :type positions: list, optional
+    :param vertical_line: Position of a single vertical line, defaults to None.
+    :type vertical_line: int, optional
+    :param title: Title for the figure, defaults to None.
+    :type title: str, optional
+    :param savefig: Path to save the figure, defaults to None.
+    :type savefig: str, optional
+    :param num_plots: Number of subplots to create, defaults to 2.
+    :type num_plots: int, optional
+    :param figsize: Figure size, defaults to (10, 5).
+    :type figsize: tuple, optional
+
+    :return: None
+    """
     if figsize:
         fig, axes = plt.subplots(num_plots, figsize=figsize)
     else:
@@ -122,6 +152,20 @@ def plot_timeseries_moments(df, columns, labels,
 
 
 def plot_eeof(epc, eeof, expl_var_ratio, savefig=None):
+    r"""
+    Visualize extended empirical orthogonal functions and related statistics.
+
+    :param epc: Extended principal components.
+    :type epc: numpy.ndarray
+    :param eeof: Extended empirical orthogonal functions.
+    :type eeof: numpy.ndarray
+    :param expl_var_ratio: Explained variance ratios for the components.
+    :type expl_var_ratio: array-like
+    :param savefig: Path to save the figure, defaults to None.
+    :type savefig: str, optional
+
+    :return: None
+    """
     fig, ax = plt.subplots(2, 2, figsize=(10, 8))
     ax[0][0].scatter(np.arange(1, len(expl_var_ratio)+1), expl_var_ratio*100)
     ax[0][0].set_ylabel('Eigenvalues (%)')
@@ -155,6 +199,20 @@ def plot_eeof(epc, eeof, expl_var_ratio, savefig=None):
 
 
 def plot_hist_per_class(df, feat_k, y, savefig=None):
+    r"""
+    Plot feature histograms grouped by class labels.
+
+    :param df: DataFrame containing the data and class labels.
+    :type df: pandas.DataFrame
+    :param feat_k: Dictionary-like object with a list of feature names under ``'features'``.
+    :type feat_k: dict
+    :param y: Column name of the class variable.
+    :type y: str
+    :param savefig: Path to save the figure, defaults to None.
+    :type savefig: str, optional
+
+    :return: None
+    """
     # for idx, feat_k in enumerate(features_kopt):
     var = y
     for feature in feat_k['features']:

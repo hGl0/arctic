@@ -118,5 +118,16 @@ def compute_eeof(signal, M=400, n_components=9):
 
 
 def multivariate_autocorrelation(X, lag=1):
+    r"""
+    Computes the autocorrelation for each column in a multivariate time series.
+
+    :param X: Input data containing multiple time series.
+    :type X: array-like or pandas.DataFrame
+    :param lag: Lag at which to compute the autocorrelation, defaults to 1.
+    :type lag: int, optional
+
+    :return: List with the autocorrelation for each column.
+    :rtype: list[float]
+    """
     X = pd.DataFrame(X)
     return [X[col].autocorr(lag=lag) for col in X.columns]

@@ -50,6 +50,17 @@ def validate_columns(df: pd.DataFrame, required_cols: List[str]) -> None:
 
 # Build candidate event ranges
 def get_event_ranges(flag_array, days=7):
+    r"""
+    Build candidate event ranges from a boolean flag array.
+
+    :param flag_array: Boolean array indicating event days.
+    :type flag_array: array-like
+    :param days: Minimum consecutive days to qualify as an event, defaults to 7.
+    :type days: int, optional
+
+    :return: List of tuples with start and end indices of detected events.
+    :rtype: list[tuple]
+    """
     ranges = []
     i = 0
     while i <= len(flag_array) - days:
