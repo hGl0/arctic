@@ -31,13 +31,20 @@ classifiers = [
 keywords = ["cluster", "polar vortex", "analysis", "climate", "split", "displaced"]
 
 [project.urls]
-Homepage = "https://github.com/hGl0/arctic"
-Issues = "https://github.com/hGl0/arctic/issues"
+Homepage = "https://github.com/hGl0/vortexclust"
+Issues = "https://github.com/hGl0/vortexclust/issues"
 
 # optional CLI
-[project.scripts]
-vortexclust = "vortexclust.workflows.demo:main"
+#[project.scripts]
+#vortexclust = "vortexclust.workflows.demo:main"
 
 [tool.hatch.build]
 include = ["vortexclust/**"]
-exclude = ["data/**", "doc/**", "output/**", "**/__pycache__/**", "*.eps", "*.sav", "*.log"]
+exclude = ["data/**",
+    "doc/**",
+    "output/**",
+    "**/__pycache__/**",
+    "vortexclust/workflows/**", # NEW: Do not ship demo workflows
+    "*.eps",
+    "*.sav",
+    "*.log"]
