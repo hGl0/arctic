@@ -20,12 +20,12 @@ Adds seaborn: `pip install vortexclust[viz]`<br>
 Adds cartopy/pyproj (needs system GEOS/PROJ): `pip install vortexclust[maps]`
 
 #### From GitHub
-`pip install git+https://github.com/hGl0/arctic@main`
+`pip install git+https://github.com/hGl0/vortexclust@main`
 
 #### From local source
 ```
 git clone https://github.com/hGl0/vortexclust.git
-cd vortexclust<br>
+cd vortexclust
 pip install -e .
 ```
 
