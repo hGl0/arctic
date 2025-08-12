@@ -44,6 +44,14 @@ VERBOSE = True
 
 # === Utility Functions === #
 def set_debug_mode(enabled: bool = True):
+    r"""
+    Toggle debug logging for the package.
+
+    :param enabled: Whether to enable debug mode, defaults to True.
+    :type enabled: bool, optional
+
+    :return: None
+    """
     global DEBUG_MODE
     DEBUG_MODE = enabled
     logger.setLevel(logging.DEBUG if enabled else LOG_LEVEL)

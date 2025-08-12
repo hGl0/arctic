@@ -126,6 +126,14 @@ def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
     fig = plt.figure(figsize=figsize)
 
     def update(frame):
+        r"""
+        Update function for each frame of the animation.
+
+        :param frame: Index of the current frame.
+        :type frame: int
+
+        :return: None
+        """
         fig.clf()  # clear the figure entirely
 
         fig.suptitle(str(df.iloc[frame][time_col]))
