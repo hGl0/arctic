@@ -1,5 +1,5 @@
 import math
-from typing import Union
+from typing import Union, Tuple, Optional
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -7,6 +7,8 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from matplotlib import animation
+
 import numpy as np
 import pandas as pd
 from matplotlib.colors import ListedColormap
@@ -15,7 +17,156 @@ from vortexclust.analysis.aggregator import apply_aggregation
 from vortexclust.analysis.geometry import compute_ellipse
 from vortexclust.core.utils import norm_series_df, validate_columns
 from vortexclust.io.paths import check_path
-from vortexclust.visualization.utils import create_polar_ax, plot_ellipse, create_animation
+
+# To Do Doc string
+def plot_split(ax, sample, filled, color='red'):
+    # plot mother vortex
+    x_final, y_final, _ = compute_ellipse(sample.area, sample.ar, sample.theta, sample.loncent, sample.latcent)
+    ax.plot(x_final, y_final, linestyle='-.', color=color, label='Mother vortex')
+
+    # plot daughter vortices
+    for n in [1, 2]:
+        if pd.notnull(sample.get(f'area{n}')):
+            x, y, _ = compute_ellipse(sample[f'area{n}'], sample[f'ar{n}'], sample[f'theta{n}'],
+                                      sample[f'loncent{n}'], sample[f'latcent{n}'])
+            plot_ellipse(ax, x, y, sample[f'loncent{n}'], sample[f'latcent{n}'], filled=filled,
+                         label=f"Split vortex {n}", color=color)
+
+def create_animation(df: pd.DataFrame, time_col: str, filled: bool,
+                     savegif: Optional[str] = None,
+                     split_col: Optional[str] = 'form',
+                     split: Optional[int] = 1,
+                     figsize: Optional[Tuple[int]] = (10,10)) -> None:
+    r"""
+    Creates an animation of ellipses over time using a DataFrame of ellipse parameters.
+
+    :param df: DataFrame containing ellipse parameters for each time step
+    :type df: pd.DataFrame
+    :param time_col: Name of the column in df that contains time information
+    :type time_col: str
+    :param filled: Whether to fill the ellipses or just draw outlines
+    :type filled: bool
+    :param split_col:
+    :type split_col: str
+    :param split:
+    :type split: int
+    :param figsize:
+    :type figsize: Tuple[int]
+    :param savegif: Path to save the animation as a GIF file, if None the animation is displayed instead
+    :type savegif: str, optional
+
+    :return: None
+    """
+
+    df = df.sort_values(by=time_col)
+
+    fig = plt.figure(figsize=figsize)
+
+    def update(frame):
+        fig.clf()  # clear the figure entirely
+
+        fig.suptitle(str(df.iloc[frame][time_col]))
+        ax = fig.add_subplot(1, 1, 1, projection=ccrs.NorthPolarStereo())
+        ax.set_extent([-180, 180, 40, 90], crs=ccrs.PlateCarree())
+
+        # Add coastlines and gridlines
+        ax.coastlines()
+
+        row = df.iloc[frame]
+        color = 'tab:blue'
+
+        if row.get(split_col) == split:
+            plot_split(ax, row, filled, color)
+        else:
+            x, y, _ = compute_ellipse(row.area, row.ar, row.theta, row.loncent, row.latcent)
+            plot_ellipse(ax, x, y, row.loncent, row.latcent, filled)
+
+        # Add gridlines: 8 longitude lines every 45°, latitude every 10°
+        gl = ax.gridlines(crs=ccrs.PlateCarree(),
+                          draw_labels=True,
+                          color='gray',
+                          linestyle='--',
+                          linewidth=1)
+
+        gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
+
+
+    ani = animation.FuncAnimation(fig, update, frames=len(df), interval=1000, repeat=False, blit=False)
+
+    if savegif:
+        ani.save(savegif, dpi=300, writer=animation.PillowWriter(fps=1))
+    else:
+        plt.show()
+    plt.close()
+
+
+def create_polar_ax(figsize=(10,10)) -> Tuple[plt.Figure, plt.Axes]:
+    r"""
+    Creates a matplotlib figure and axis with North Polar Stereographic projection.
+
+    The function sets up a figure with coastlines and appropriate extent for Arctic visualization.
+
+    :return: A tuple containing:
+        - The matplotlib figure object
+        - The axis object with North Polar Stereographic projection
+    :rtype: tuple(matplotlib.figure.Figure, matplotlib.axes.Axes)
+    """
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': ccrs.NorthPolarStereo()})
+    ax.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m',
+                                                edgecolor='black', facecolor='none'), linewidth=0.5)
+    ax.set_extent([-180, 180, 40, 90], crs=ccrs.PlateCarree())
+    return fig, ax
+
+
+def plot_ellipse(ax: plt.Axes, x: np.ndarray, y: np.ndarray, loncent: float, latcent: float,
+                 filled: bool = True,
+                 color: str = 'red',
+                 label: str = 'Vortex ellipse') -> None:
+    r"""
+    Plots an ellipse on a given axis, with options for filled or outline representation.
+
+    :param ax: The matplotlib axis on which to plot
+    :type ax: matplotlib.axes.Axes
+    :param x: X-coordinates of the ellipse points
+    :type x: array-like
+    :param y: Y-coordinates of the ellipse points
+    :type y: array-like
+    :param loncent: Longitude of the ellipse center
+    :type loncent: float
+    :param latcent: Latitude of the ellipse center
+    :type latcent: float
+    :param filled: Whether to fill the ellipse or just draw the outline, defaults to True
+    :type filled: bool, optional
+    :param color: Color of the ellipse, defaults to 'red'
+    :type color: str, optional
+    :param label: Label for the ellipse in the legend, defaults to 'Vortex ellipse'
+    :type label: str, optional
+
+    :return: None
+    """
+    # Coordinate validation
+    if not isinstance(x, (np.ndarray, list)) or not isinstance(y, (np.ndarray, list)):
+        raise TypeError("x and y must be array-like (e.g., np.ndarray or list).")
+
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.shape != y.shape:
+        raise ValueError(f"x and y must have the same shape. Got {x.shape} and {y.shape}.")
+
+    if len(x) == 0:
+        raise ValueError("x and y are empty.")
+
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise ValueError("x and y must not contain NaN or infinite values.")
+
+    if filled:
+        ax.fill(x, y, color=color, label=label)
+    else:
+        ax.plot(x, y, color=color, label=label)
+    ax.scatter(loncent, latcent, color=color, marker='x', transform=ccrs.PlateCarree(), label='Center')
+    ax.legend(loc='upper left')
+
 
 
 def plot_polar_stereo(
@@ -262,18 +413,3 @@ def plot_polar_stereo(
             # Add a colorbar
             # cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
             # cbar.set_label('Geopotential Height (gpm)')
-
-
-# To Do Doc string
-def plot_split(ax, sample, filled, color='red'):
-    # plot mother vortex
-    x_final, y_final, _ = compute_ellipse(sample.area, sample.ar, sample.theta, sample.loncent, sample.latcent)
-    ax.plot(x_final, y_final, linestyle='-.', color=color, label='Mother vortex')
-
-    # plot daughter vortices
-    for n in [1, 2]:
-        if pd.notnull(sample.get(f'area{n}')):
-            x, y, _ = compute_ellipse(sample[f'area{n}'], sample[f'ar{n}'], sample[f'theta{n}'],
-                                      sample[f'loncent{n}'], sample[f'latcent{n}'])
-            plot_ellipse(ax, x, y, sample[f'loncent{n}'], sample[f'latcent{n}'], filled=filled,
-                         label=f"Split vortex {n}", color=color)

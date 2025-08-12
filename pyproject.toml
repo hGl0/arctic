@@ -14,7 +14,6 @@ dependencies = [
     "pyproj>=3.4,<4.0",
 ]
 [project.optional-dependencies]
-viz = ["seaborn>=0.12,<0.14",]
 maps = ["cartopy>0.21,<0.23"]
 
 [tool.hatch.version]
@@ -22,10 +21,10 @@ path = "vortexclust/__init__.py"
 authors = [{name="Hanna Gloyna", email="hanna.gloyna@gmx.de"}]
 description = "Python package to cluster and analyse stratospheric polar vortex data with focus on different vortex regimes."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = {file = "LICENSE"}
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]

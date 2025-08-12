@@ -1,5 +1,5 @@
-# Atmospheric Research and Clustering for Trends and Influences in Climate (arctic)
-Arctic is a python package to analyse and cluster climate data. It has a special focus on the segmentation and influences in the stratospheric polar vortex and sudden stratospheric warmings.
+# Clustering of stratospheric polar vortex regimes
+`Vortexclust` is a python package to analyse and cluster climate data. It has a special focus on the segmentation and influences in the stratospheric polar vortex and sudden stratospheric warmings.
 
 ## Table of Contents
 - [Installation](#installation)
@@ -39,7 +39,7 @@ pip install vortexclust[viz, maps]
 ```
 
 
-
+## Getting started
 
 [To Do] snippets to get started: import, load demo csv, cluster plot or function
 
