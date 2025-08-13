@@ -14,7 +14,7 @@ dependencies = [
     "pyproj>=3.4,<4.0",
 ]
 [project.optional-dependencies]
-maps = ["cartopy>=0.24,<0.26"]
+maps = ["cartopy>=0.23,<0.26"]
 
 [tool.hatch.version]
 path = "vortexclust/__init__.py"
