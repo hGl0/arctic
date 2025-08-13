@@ -1,6 +1,10 @@
 # Data files, until go to release data
 data/
 vortexclust/__pycache__
+vortexclust/analysis/__pycache__
+vortexclust/core/__pycache__
+vortexclust/io/__pycache__
+vortexclust/models/__pycache__
 
 # Default ignored files
 /shelf/
