@@ -2,7 +2,7 @@
 from .core.constants import *
 from .analysis import *
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Hanna Gloyna"
 
 import importlib
