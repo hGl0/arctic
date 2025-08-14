@@ -17,7 +17,7 @@ dependencies = [
 # CHANGED:
 # maps = ["cartopy>=0.23, <0.26]
 maps = ["cartopy>=0.24,<0.26"] # compability with Python 3.13
-demo = ["seaborn>=0.12,<1.0"]]
+demo = ["seaborn>=0.12,<1.0"]
 
 [tool.hatch.version]
 path = "vortexclust/__init__.py"
