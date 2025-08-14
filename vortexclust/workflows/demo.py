@@ -3,7 +3,14 @@ from vortexclust.io.paths import check_path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError as e:
+    raise ImportError(
+        "seaborn is required for the demo workflow. "
+        "Install via: pip install vortexclust[demo]"
+    ) from e
+
 import numpy as np
 import pandas as pd
 
