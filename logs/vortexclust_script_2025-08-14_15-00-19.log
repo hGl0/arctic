@@ -1,5 +1,0 @@
-2025-08-14 15:00:19,634 | INFO | root:84 | Transformed 'form':['S'] to 1;['D'] to 0
-2025-08-14 15:00:19,993 | INFO | root:119 | Seasonality check for 'scaled_area' recommended. Durbin-Watson: 0.13708749008002752
-2025-08-14 15:00:19,994 | INFO | root:119 | Seasonality check for 'scaled_ar' recommended. Durbin-Watson: 0.16078286578474874
-2025-08-14 15:00:19,995 | INFO | root:119 | Seasonality check for 'scaled_latcent' recommended. Durbin-Watson: 0.17422378803085456
-2025-08-14 15:00:19,996 | INFO | root:119 | Seasonality check for 'scaled_u' recommended. Durbin-Watson: 0.07159993184204833
