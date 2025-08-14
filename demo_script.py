@@ -147,8 +147,13 @@ def main():
         plt.savefig(os.path.join(output_dir, f"eeof_ssa_{col}.png"))
         if show_plots: plt.show()
 
+        ssa_computed = ssa_computed.T
+        if len(ssa_computed[0]) == len(demo):
+            print("Matches axis = 0")
+        if len(ssa_computed) == len(demo):
+            print("Matches axis = 1")
 
-        demo["ssa_"+col] = demo[col] - ssa_computed[:n_components].sum(axis=0)
+        demo["ssa_"+col] = demo[col] - ssa_computed[:, :n_components].sum(axis=1)
 
         demo.loc[:, "eeof_"+col] = np.full_like(demo["ssa_"+col], np.nan)
         demo.loc[:309, "eeof_"+col] = demo.loc[:309, col] - eeof_computed[399:709, 0].T
