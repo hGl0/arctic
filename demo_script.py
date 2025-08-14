@@ -1,4 +1,3 @@
-import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
 
 import vortexclust as vc
@@ -126,7 +125,7 @@ def main():
         plt.axhline(y=0.05, linestyle='--', color='black')
         plt.axhline(y=-0.05, linestyle='--', color='black')
         plt.title(f"Autocorrelation check for '{c}'")
-        plt.savefig(os.path.join(output_dir, f"seasonality_check_{c}.png"))
+        plt.savefig(output_dir + f"seasonality_check_{c}.png")
         if show_plots: plt.show()
 
     # filter seasonality
@@ -155,6 +154,8 @@ def main():
         demo.loc[:309, "eeof_"+col] = demo.loc[:309, col] - eeof_computed[399:709, 0].T
         demo.loc[310:1000, "eeof_"+col] = demo.loc[310:1000, col] - eeof_computed[399:1090, 309].T
 
+        demo = demo[:1000]
+
         plt.figure()
         plt.plot(demo.loc[:500, col], label='original')
         plt.plot(demo.loc[:500, "ssa_"+col], label="SSA filtered")
@@ -181,7 +182,7 @@ def main():
                 break
 
     model = AgglomerativeClustering(linkage='complete', compute_distances=True, n_clusters=k_opt)
-    model.fit(demo[['scaled_ar', 'scaled_latcent', 'ssa_scaled_u']])
+    model.fit(demo[['scaled_ar', 'scaled_latcent', 'eeof_scaled_u']])
     y = model.labels_.astype(int)
     demo['y'] = y
 
@@ -193,8 +194,8 @@ def main():
     # statistics of classes
     from vortexclust.workflows.demo import plot_hist_per_class
     logging.info(f"Averages per class:\n"
-                 f"{demo[['y', 'scaled_ar', 'scaled_latcent', 'ssa_scaled_u']].groupby(['y']).mean()}")
-    plot_hist_per_class(demo, {'features' : ['scaled_ar', 'scaled_latcent', 'ssa_scaled_u']}, 'y', savefig=output_dir+"demo_hist_per_class.png")
+                 f"{demo[['y', 'scaled_ar', 'scaled_latcent', 'eeof_scaled_u']].groupby(['y']).mean()}")
+    plot_hist_per_class(demo, {'features' : ['scaled_ar', 'scaled_latcent', 'eeof_scaled_u']}, 'y', savefig=output_dir+"demo_hist_per_class")
 
     # compare to form
     from vortexclust.workflows.demo import compare_cluster
@@ -209,7 +210,7 @@ def main():
             compare_col='form',
             pred_value=1,
             gt_value=1,
-            y_names=['y'],
+            y_names=['y']
         )
 
 

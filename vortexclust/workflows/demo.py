@@ -117,7 +117,7 @@ def plot_timeseries_moments(df, columns, labels,
     plt.tight_layout()
     if savefig is not None:
         check_path(savefig)
-        plt.savefig('../output/scaled_moments.png')
+        plt.savefig(savefig)
     plt.show()
 
 
@@ -204,8 +204,8 @@ def plot_hist_per_class(df, feat_k, y, savefig=None):
             axes[1].axvline(mean_val, color=color, linewidth=1, linestyle='-.',
                             label=f"Mean of {var} = {label}")
         if savefig:
-            check_path(savefig)
-            plt.savefig(savefig)
+            check_path(savefig+f"{feature}")
+            plt.savefig(savefig+f"{feature}")
 
         plt.tight_layout()
         plt.show()
