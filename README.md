@@ -41,11 +41,15 @@ pip install vortexclust[viz, maps]
 
 ## Getting started
 
+
 [To Do] snippets to get started: import, load demo csv, cluster plot or function
 
 
 ## Usage <a name="usage"></a>
 [To Do] Short discription of usage, reference to jupyternotebook as user story
+
+## Tests
+[To Do] Description how to start tests
 
 ## Contributing <a name="contributing"></a>
 [To Do] How to contribute, whom to contact
