@@ -46,7 +46,6 @@ exclude = ["data/**",
     "doc/**",
     "output/**",
     "**/__pycache__/**",
-    "vortexclust/workflows/**", # NEW: Do not ship demo workflows
     "*.eps",
     "*.sav",
     "*.log"]
