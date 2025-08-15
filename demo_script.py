@@ -104,6 +104,7 @@ def main():
             plot_timeseries_moments(demo, scaled_col, col,
                                 title='Vortex Geoemtric Moments',
                                 time_span=500, savefig=output_dir+"moments.png")
+            plt.close()
     except Exception as e:
         print("Exception:", e)
 
@@ -127,6 +128,7 @@ def main():
         plt.title(f"Autocorrelation check for '{c}'")
         plt.savefig(output_dir + f"seasonality_check_{c}.png")
         if show_plots: plt.show()
+        plt.close()
 
     # filter seasonality
     from pyts.decomposition import SingularSpectrumAnalysis
@@ -137,6 +139,7 @@ def main():
         if len(to_filter) < 2:
             from vortexclust.workflows.demo import plot_eeof
             plot_eeof(epc, eeof, expl_var_ratio)
+            plt.close()
 
         plt.figure()
         plt.plot(demo[col][:500], label='original')
@@ -146,14 +149,15 @@ def main():
         plt.legend()
         plt.savefig(os.path.join(output_dir, f"eeof_ssa_{col}.png"))
         if show_plots: plt.show()
+        plt.close()
 
-        ssa_computed = ssa_computed.T
-        if len(ssa_computed[0]) == len(demo):
-            print("Matches axis = 0")
-        if len(ssa_computed) == len(demo):
-            print("Matches axis = 1")
-
-        demo["ssa_"+col] = demo[col] - ssa_computed[:, :n_components].sum(axis=1)
+        try:
+            demo["ssa_"+col] = demo[col] - ssa_computed[:n_components].sum(axis=0)
+        except Exception as e:
+            print("Some python versions use a different return format for `ssa_computed`. "
+                  "In this case the indices do not match and should be adapted accordingly. "
+                  "In the past ssa_computed[0, :n_components, :].sum(axis=0) proved to be valid fix.")
+            print("Exception:", e)
 
         demo.loc[:, "eeof_"+col] = np.full_like(demo["ssa_"+col], np.nan)
         demo.loc[:309, "eeof_"+col] = demo.loc[:309, col] - eeof_computed[399:709, 0].T
@@ -169,6 +173,7 @@ def main():
         plt.legend()
         plt.savefig(os.path.join(output_dir, f"filtered_{col}.png"))
         if show_plots: plt.show()
+        plt.close()
 
     # determine k_opt
     if k_opt is None:
@@ -178,6 +183,7 @@ def main():
         plt.errorbar(np.arange(1, k_max+1), gap_ar_latcent_u[:, 0], y_err=gap_ar_latcent_u[:, 1], label="AR, Latcent, Wind Speed")
         plt.savefig(output_dir+"/gap_ar_latcent_u.png")
         if show_plots: plt.show()
+        plt.close()
 
         p = 1
         for k in range(1, 10):

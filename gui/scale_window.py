@@ -1,18 +1,17 @@
 import os
 import logging
 import pandas as pd
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QComboBox, QPushButton,
     QListWidget, QListWidgetItem, QMessageBox, QCheckBox,
-    QHBoxLayout, QLineEdit
+    QHBoxLayout, QLineEdit, QAbstractItemView
 )
-from PyQt6.QtCore import Qt
+from PySide6.QtCore import Qt
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 import matplotlib.pyplot as plt
 from datetime import datetime
 
 from filter_window import FilterWindow
-
 from vortexclust.io.cleaner import to_date
 
 def select_scaler(name):
@@ -20,7 +19,6 @@ def select_scaler(name):
     if name == 'RobustScaler': return RobustScaler()
     if name == 'MinMaxScaler': return MinMaxScaler()
     return None
-
 
 month_map = {
     'January': 1, 'February': 2, 'March': 3,
@@ -89,19 +87,17 @@ class ScaleWindow(QWidget):
         layout.addLayout(date_layout)
 
         self.month_selector = QListWidget()
-        self.month_selector.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
-
+        self.month_selector.setSelectionMode(QAbstractItemView.MultiSelection)
         for m in month_map:
             item = QListWidgetItem(str(m))
             self.month_selector.addItem(item)
-
         layout.addWidget(QLabel("Select Months of Interest (optional):"))
         layout.addWidget(self.month_selector)
 
         # Features for plotting
         layout.addWidget(QLabel("Select Features to Plot:"))
         self.feature_selector = QListWidget()
-        self.feature_selector.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.feature_selector.setSelectionMode(QAbstractItemView.MultiSelection)
         for col in df.columns:
             item = QListWidgetItem(col)
             self.feature_selector.addItem(item)
@@ -210,7 +206,8 @@ class ScaleWindow(QWidget):
         else:
             num_days = -1
         if num_days > df_scaled.shape[0]:
-            QMessageBox.warning(self, "Feature Selection", f"Please select a number of days to plot.\n The maximum number are {df_scaled.shape[0]}.")
+            QMessageBox.warning(self, "Feature Selection",
+                                f"Please select a number of days to plot.\n The maximum number are {df_scaled.shape[0]}.")
 
         n_pairs = len(selected_features) // 2
         fig, axes = plt.subplots(n_pairs, figsize=(10, 4 * n_pairs))
@@ -232,7 +229,6 @@ class ScaleWindow(QWidget):
         QMessageBox.information(self, "Success", f"Scaled features plotted and saved to:\n{out_path}")
 
     def start_filter(self):
-        # Proceed to scaling
         df_scaled = self.df.copy()
         self.filter_window = FilterWindow(df_scaled, self.output_path)
         self.filter_window.show()
