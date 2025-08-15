@@ -217,6 +217,9 @@ def main():
             gt_value=1,
             y_names=['y']
         )
+    # Store results as csv
+    demo.to_csv(output_dir+"demo_results.csv")
+
 
 
 if __name__ == "__main__":

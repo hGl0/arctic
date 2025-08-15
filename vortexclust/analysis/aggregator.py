@@ -3,7 +3,7 @@ from typing import Union, Callable
 import pandas as pd
 
 
-def apply_aggregation(df: pd.DataFrame, agg_func: Union[str, Callable]) -> Union[pd.DataFrame, pd.Series]:
+def apply_aggregation(df: pd.DataFrame, agg_func: Union[str, Callable, None]) -> Union[pd.DataFrame, pd.Series]:
     r"""
     Applies an aggregation function to a DataFrame.
 

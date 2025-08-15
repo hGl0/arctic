@@ -171,8 +171,6 @@ def plot_ellipse(ax: plt.Axes, x: np.ndarray, y: np.ndarray, loncent: float, lat
 
 def plot_polar_stereo(
         df: Union[pd.DataFrame, pd.Series],
-        P: Union[int, float] = 10,
-        T: Union[int, float] = -50,
         mode: str = 'single',  # modify mode on given arguments?
         **kwargs) -> None:
     r"""
@@ -183,10 +181,8 @@ def plot_polar_stereo(
 
     :param df: DataFrame containing ellipse parameters (area, latcent, loncent, theta, ar)
     :type df: pd.DataFrame or pd.Series
-    :param P: Pressure level in hPa, defaults to 10
-    :type P: int or float, optional
-    :param T: Temperature in degrees Celsius, defaults to -50
-    :type T: int or float, optional
+    :param P: Pressure level in hPa, defaults to 10. Reserved for future use
+    :param T: Temperature in degrees Celsius, defaults to -50. Reserved for future use.
     :param mode: Visualization mode, one of 'single', 'aggregate', 'animate', 'subplot', or 'overlay', defaults to 'single'
     :type mode: str, optional
     :param kwargs: Additional arguments:
