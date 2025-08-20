@@ -94,10 +94,10 @@ def plot_pca(pca: Any, x_reduced: np.ndarray,
         score = x_reduced[:, :]
         pvars = pca.explained_variance_ratio_ * 100
 
-        if len(x_reduced) < 2:
-            raise ValueError(f"Only {len(score)} columns detected. No plotting available.")
-        elif len(score)<3:
-            warnings.warn(f"Only {len(score)} columns detected. 3D plot is not possible. Resetting to 2D.", UserWarning)
+        if score.shape[1] < 2:
+            raise ValueError(f"Only {score.shape[1]} columns detected. No plotting available.")
+        elif score.shape[1]<3:
+            warnings.warn(f"Only {score.shape[1]} columns detected. 3D plot is not possible. Resetting to 2D.", UserWarning)
             xs, ys = score[:, :2].T
             plot_type = '2D'
         else:
