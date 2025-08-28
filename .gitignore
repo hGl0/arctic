@@ -8,6 +8,8 @@ vortexclust/models/__pycache__
 vortexclust/visualization/__pycache__
 vortexclust/workflows/__pycache__
 
+output/*
+
 # Default ignored files
 /shelf/
 .idea/workspace.xml
