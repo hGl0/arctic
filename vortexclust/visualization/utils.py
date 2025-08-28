@@ -46,7 +46,7 @@ def feature_consistence(df: pd.DataFrame,
                             f"Tried increasing but reached dataset limit.")
 
         pca_features = (pd.DataFrame(compute_pca(df, plot_type=None,
-                                    n_comp=n_features + add_features)[1])
+                                    n_components=n_features + add_features)[1])
                         .drop(['Expl_var', 'Expl_var_ratio'])
                         .idxmax()
                         .reset_index())

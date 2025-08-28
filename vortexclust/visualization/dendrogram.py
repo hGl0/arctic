@@ -38,7 +38,9 @@ def plot_dendrogram(model: Any,
         "LR": "left",
         "RL": "right"
     }
-    orientation = orientation_map.get(direction.upper())
+    orientation = None
+    if isinstance(direction, str):
+        orientation = orientation_map.get(direction.upper())
 
     # Create linkage matrix and then plot the dendrogram
     counts = np.zeros(model.children_.shape[0])

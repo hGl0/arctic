@@ -21,6 +21,10 @@ demo = [
     "statsmodel"
 ]
 
+[pytest]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
 [tool.hatch.version]
 path = "vortexclust/__init__.py"
 authors = [{name="Hanna Gloyna", email="hanna.gloyna@gmx.de"}]

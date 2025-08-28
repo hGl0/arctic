@@ -88,6 +88,8 @@ def compute_pca(df: pd.DataFrame, n_components: int = 4, **kwargs) -> Tuple[np.n
 def compute_eeof(signal: pd.DataFrame, M: int=400, n_components: int=9) -> tuple[
     Any, Any, Any, ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
     r"""
+    Generates a sliding window of the signal and computes the extended empirical orthogonal function (EEOF).
+
     :param signal: Time series of feature.
     :type signal: pandas.DataFrame
     :param M: Sliding window, that should be applied to compute the delay matrix and empirical principal components.

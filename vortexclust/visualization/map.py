@@ -1,5 +1,6 @@
 import math
 from typing import Union, Tuple, Optional
+from pathlib import Path
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -121,7 +122,8 @@ def create_polar_ax(figsize=(10,10)) -> Tuple[plt.Figure, plt.Axes]:
 def plot_ellipse(ax: plt.Axes, x: np.ndarray, y: np.ndarray, loncent: float, latcent: float,
                  filled: bool = True,
                  color: str = 'red',
-                 label: str = 'Vortex ellipse') -> None:
+                 label: str = 'Vortex ellipse',
+                 center_color: str='blue') -> None:
     r"""
     Plots an ellipse on a given axis, with options for filled or outline representation.
 
@@ -164,7 +166,7 @@ def plot_ellipse(ax: plt.Axes, x: np.ndarray, y: np.ndarray, loncent: float, lat
         ax.fill(x, y, color=color, label=label)
     else:
         ax.plot(x, y, color=color, label=label)
-    ax.scatter(loncent, latcent, color=color, marker='x', transform=ccrs.PlateCarree(), label='Center')
+    ax.scatter(loncent, latcent, color=center_color, marker='x', transform=ccrs.PlateCarree(), label='Center')
     ax.legend(loc='upper left')
 
 
@@ -232,9 +234,15 @@ def plot_polar_stereo(
     elif mode == "animate":
         if time_col is None:
             raise KeyError("time_col required for animation mode")
+        out = savefig
+        if out:
+            p = Path(out)
+            if p.suffix.lower() not in {".gif"}:
+                # coerce to GIF, or warn
+                out = str(p.with_suffix(".gif"))
         validate_columns(df, [time_col])
         # To Do: adjust for split event
-        create_animation(df, time_col, filled, savefig, figsize=figsize)
+        create_animation(df, time_col, filled, savegif=out, figsize=figsize)
 
     elif mode == "subplot":
         count = min(len(df), max_subplots)
@@ -307,7 +315,7 @@ def plot_polar_stereo(
         trimmed_colors = original_cmap(np.linspace(0, max_brightness, 256))
         muted_cmap = ListedColormap(trimmed_colors)
 
-        fig, ax = create_polar_ax()
+        fig, ax = create_polar_ax(figsize=figsize)
 
         # create color gradient if time column is available
         if time_col is not None:
@@ -374,11 +382,15 @@ def plot_polar_stereo(
             x_final, y_final, _ = compute_ellipse(area, ar, theta, loncent, latcent)
 
             fig, ax = create_polar_ax(figsize=figsize)
+            color = plt.get_cmap(cmap)(0.0)
+            if time_col is not None:
+                t=pd.to_datetime(sample[time_col])
+                ax.set_title(t.strftime("%d-%m-%Y %H:%M"))
 
             if sample.get(split_col) == split:
-                plot_split(ax, sample, filled)
+                plot_split(ax, sample, filled, color=color)
             else:
-                plot_ellipse(ax, x_final, y_final, loncent, latcent)
+                plot_ellipse(ax, x_final, y_final, loncent, latcent, color = color, filled=filled)
 
             # Add gridlines: 8 longitude lines every 45°, latitude every 10°
             gl = ax.gridlines(crs=ccrs.PlateCarree(),
@@ -386,14 +398,13 @@ def plot_polar_stereo(
                               color='gray',
                               linestyle='--',
                               linewidth=1)
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 181, 45))
 
-            gl.xlocator = mticker.FixedLocator(np .arange(-180, 181, 45))
-            # gl.ylocator = mticker.FixedLocator(np.arange(40, 91, 10))
-
-            # plot_ellipse(ax, x_final, y_final, loncent, latcent, filled=filled)
             # Add a legend
             ax.legend(loc='upper left')
             fig.autofmt_xdate(rotation=45)
+            fig.tight_layout()
+
             if savefig:
                 check_path(savefig)
                 plt.savefig(savefig)

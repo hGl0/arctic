@@ -38,8 +38,8 @@ def validate_columns(df: pd.DataFrame, required_cols: List[str]) -> None:
 
     :return: None
     """
-    if (not isinstance(df, pd.DataFrame)) and (not isinstance(df, pd.Series)):
-        raise TypeError("Expected a pandas.DataFrame or pandas.Series")
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected a pandas.DataFrame and not a {type(df)}.")
     if len(required_cols) < 1:
         warnings.warn(UserWarning("At least one required column should be given."))
 

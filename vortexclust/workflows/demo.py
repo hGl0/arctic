@@ -1,4 +1,8 @@
 import warnings
+
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+
 from vortexclust.io.paths import check_path
 
 import matplotlib.dates as mdates
@@ -210,11 +214,24 @@ def plot_hist_per_class(df, feat_k, y, savefig=None):
                             label=f"Mean of {var} = {label}")
             axes[1].axvline(mean_val, color=color, linewidth=1, linestyle='-.',
                             label=f"Mean of {var} = {label}")
+
+        handles = [Patch(facecolor=color_map[c], label=str(c)) for c in unique_classes]
+        handles.append(Line2D([0], [0], linestyle='-.', color='black', label='Class mean'))
+        for ax in axes:
+            ax.legend(
+                handles=handles, title=var,
+                loc='upper right',
+                bbox_to_anchor=(1, 1),
+                bbox_transform=ax.transAxes,
+                frameon=True,
+            )
+
+        plt.tight_layout()
+
         if savefig:
             check_path(savefig+f"{feature}")
             plt.savefig(savefig+f"{feature}")
 
-        plt.tight_layout()
         plt.show()
 
 

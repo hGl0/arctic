@@ -31,9 +31,9 @@ def test_validate_columns(sample_df):
 
 def test_validate_columns_invalid(sample_df):
     # check if missing is detected
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         validate_columns(sample_df, ['A', 'B', 'C'])
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         validate_columns(pd.DataFrame(), ['A', 'B'])
     # dealing with series
     with pytest.raises(TypeError):

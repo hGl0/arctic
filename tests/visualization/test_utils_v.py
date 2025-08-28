@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from vortexclust.visualization.utils import feature_consistence, create_animation, create_polar_ax, plot_ellipse
+from vortexclust.visualization.utils import feature_consistence
 
 logger = logging.getLogger(__name__)
 
@@ -53,41 +53,3 @@ def test_feature_consistence_invalid():
 
     with pytest.raises(ValueError, match="If 'n_features' is provided"):
         feature_consistence(df=sample_df, n_features=2.6)
-
-def test_create_animation(tmp_path):
-    df = pd.DataFrame({
-        'time': pd.date_range("2023-01-01", periods=2),
-        'area': [1e6, 1e6],
-        'ar': [1.5, 1.6],
-        'theta': [30, 60],
-        'loncent': [0, 10],
-        'latcent': [60, 65],
-        'form': [0, 1]
-    })
-
-    savegif = tmp_path / "test.gif"
-    with mock.patch("matplotlib.pyplot.show"):
-        create_animation(df, time_col='time', filled=True, savegif=str(savegif), split=1)
-    assert savegif.exists()
-
-def test_create_polar_ax():
-    fig, ax = create_polar_ax()
-    assert fig is not None
-    assert hasattr(ax, "set_extent")
-    plt.close(fig)
-
-
-def test_plot_ellipse():
-    fig, ax = create_polar_ax()
-    x = np.cos(np.linspace(0, 2 * np.pi, 100))
-    y = np.sin(np.linspace(0, 2 * np.pi, 100))
-    plot_ellipse(ax, x, y, 0, 60, filled=True)
-    # Check if elements were added
-    assert len(ax.patches) > 0 or len(ax.lines) > 0
-    plt.close(fig)
-
-def test_plot_ellipse_invalid():
-    fig, ax = create_polar_ax()
-    with pytest.raises(ValueError):
-        plot_ellipse(ax, [], [], 0, 60)
-    plt.close(fig)

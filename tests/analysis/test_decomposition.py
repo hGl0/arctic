@@ -20,7 +20,7 @@ def sample_df():
                                     RobustScaler()])
 def test_compute_pca(sample_df, tmp_path, scaler):
     # generell
-    X_pca, scores, pca_obj = compute_pca(sample_df, n_comp=3)
+    X_pca, scores, pca_obj = compute_pca(sample_df, n_components=3)
     assert isinstance(X_pca, np.ndarray)
     assert isinstance(scores, pd.DataFrame)
     assert X_pca.shape[0] == sample_df.shape[0]
@@ -29,9 +29,9 @@ def test_compute_pca(sample_df, tmp_path, scaler):
     assert hasattr(pca_obj, 'components_')
 
     # with scaling
-    X_pca, _, _ = compute_pca(sample_df, n_comp=3, scaler=scaler) # valid scaler class
+    X_pca, _, _ = compute_pca(sample_df, n_components=3, scaler=scaler) # valid scaler class
     assert isinstance(X_pca, np.ndarray)
-    X_pca, _, _ = compute_pca(sample_df, n_comp=3, scaler="invalid") # not a scaler
+    X_pca, _, _ = compute_pca(sample_df, n_components=3, scaler="invalid") # not a scaler
     assert isinstance(X_pca, np.ndarray)
     sc = StandardScaler()
     X_pca, _, _ = compute_pca(sample_df, scaler=sc) # invalid scaler object
@@ -39,7 +39,7 @@ def test_compute_pca(sample_df, tmp_path, scaler):
 
     # with saving
     path = tmp_path / 'pca.csv'
-    compute_pca(sample_df, n_comp=3, savecsv=str(path))
+    compute_pca(sample_df, n_components=3, savecsv=str(path))
     assert path.exists()
     saved = pd.read_csv(path)
     assert not saved.empty
@@ -50,7 +50,7 @@ def test_compute_pca(sample_df, tmp_path, scaler):
 def test_compute_pca_invalid(sample_df):
     # components exceeds feature
     with pytest.warns(UserWarning, match="Less components than given"):
-        _, scores, _ = compute_pca(sample_df, n_comp=10)
+        _, scores, _ = compute_pca(sample_df, n_components=10)
     assert scores.shape[1] == sample_df.shape[1] # should cap at 5
     # invalid dataframe
     with pytest.raises(TypeError, match="Input data must"):
